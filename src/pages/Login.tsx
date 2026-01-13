@@ -1,4 +1,3 @@
-import { AlertCircle, Eye, EyeOff, Fuel, Lock, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useSupabase } from '../context/SupabaseContext'
 
@@ -38,7 +37,7 @@ export default function Login() {
         <div>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center">
-              <Fuel className="w-7 h-7 text-white" />
+              <span className="text-2xl font-bold text-white">M</span>
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">Matanuska</h1>
@@ -77,7 +76,7 @@ export default function Login() {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
             <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-              <Fuel className="w-7 h-7 text-white" />
+              <span className="text-2xl font-bold text-white">M</span>
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Matanuska</h1>
@@ -98,7 +97,7 @@ export default function Login() {
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <span className="text-red-600 flex-shrink-0">⚠️</span>
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
@@ -109,7 +108,7 @@ export default function Login() {
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">@</span>
                 <input
                   id="email"
                   type="email"
@@ -127,7 +126,7 @@ export default function Login() {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -143,11 +142,7 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showPassword ? '🙈' : '👁️'}
                 </button>
               </div>
             </div>

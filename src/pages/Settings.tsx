@@ -1,14 +1,3 @@
-import
-    {
-        AlertTriangle,
-        Bell,
-        Calculator,
-        CheckCircle,
-        Database,
-        RefreshCw,
-        Save,
-        Shield
-    } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -101,14 +90,7 @@ export default function Settings() {
           disabled={saving}
           className="btn-primary flex items-center gap-2"
         >
-          {saving ? (
-            <RefreshCw className="w-4 h-4 animate-spin" />
-          ) : saved ? (
-            <CheckCircle className="w-4 h-4" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
-          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
+          {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
         </button>
       </div>
 
@@ -124,7 +106,7 @@ export default function Settings() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <Calculator className="w-5 h-5" />
+              <span className="w-5 h-5 flex items-center justify-center">📊</span>
               <span className="font-medium">Calculation</span>
             </button>
             <button
@@ -135,7 +117,7 @@ export default function Settings() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <Database className="w-5 h-5" />
+              <span className="w-5 h-5 flex items-center justify-center">🗄️</span>
               <span className="font-medium">Database</span>
             </button>
             <button
@@ -146,7 +128,7 @@ export default function Settings() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <Bell className="w-5 h-5" />
+              <span className="w-5 h-5 flex items-center justify-center">🔔</span>
               <span className="font-medium">Notifications</span>
             </button>
             <button
@@ -157,7 +139,7 @@ export default function Settings() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <Shield className="w-5 h-5" />
+              <span className="w-5 h-5 flex items-center justify-center">🛡️</span>
               <span className="font-medium">Security</span>
             </button>
           </nav>
@@ -168,8 +150,7 @@ export default function Settings() {
           {activeSection === 'calculation' && (
             <>
               <div className="card">
-                <h2 className="card-header flex items-center gap-2">
-                  <Calculator className="w-5 h-5 text-gray-400" />
+                <h2 className="card-header">
                   Tariff Calculation Settings
                 </h2>
                 <div className="space-y-6">
@@ -299,13 +280,12 @@ export default function Settings() {
 
           {activeSection === 'database' && (
             <div className="card">
-              <h2 className="card-header flex items-center gap-2">
-                <Database className="w-5 h-5 text-gray-400" />
+              <h2 className="card-header">
                 Database Connection
               </h2>
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <span className="text-green-600">✓</span>
                   <div>
                     <p className="font-medium text-green-800">Connected to Supabase</p>
                     <p className="text-sm text-green-600">Database is online and accessible</p>
@@ -348,8 +328,7 @@ export default function Settings() {
 
           {activeSection === 'notifications' && (
             <div className="card">
-              <h2 className="card-header flex items-center gap-2">
-                <Bell className="w-5 h-5 text-gray-400" />
+              <h2 className="card-header">
                 Notification Preferences
               </h2>
               <div className="space-y-4">
@@ -390,8 +369,7 @@ export default function Settings() {
 
           {activeSection === 'security' && (
             <div className="card">
-              <h2 className="card-header flex items-center gap-2">
-                <Shield className="w-5 h-5 text-gray-400" />
+              <h2 className="card-header">
                 Security Settings
               </h2>
               <div className="space-y-6">
@@ -423,7 +401,7 @@ export default function Settings() {
                 <div className="pt-4 border-t border-gray-200">
                   <h4 className="font-medium text-gray-900 mb-3">Two-Factor Authentication</h4>
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-amber-600 flex-shrink-0 mt-0.5">⚠️</span>
                     <div>
                       <p className="font-medium text-amber-800">2FA Not Enabled</p>
                       <p className="text-sm text-amber-700 mt-1">

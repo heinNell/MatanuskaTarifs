@@ -1,32 +1,7 @@
-import
-    {
-        ArrowLeft,
-        Building2,
-        Calendar,
-        Clock,
-        CreditCard,
-        Download,
-        Edit,
-        Eye,
-        FileSpreadsheet,
-        FileText,
-        History,
-        Mail,
-        MapPin,
-        Phone,
-        Plus,
-        Route as RouteIcon,
-        Save,
-        Trash2,
-        TrendingDown,
-        TrendingUp,
-        Upload,
-        X
-    } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { formatCurrency, formatDate, formatPercentage } from '../lib/utils'
+import { formatCurrency, formatDate } from '../lib/utils'
 import type { Client, ClientRoute, Document, Route, TariffHistory } from '../types'
 
 // Form data for adding/editing client routes
@@ -278,7 +253,7 @@ export default function ClientDetail() {
           onClick={() => navigate('/clients')}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+          <span className="text-gray-600">←</span>
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
@@ -293,15 +268,13 @@ export default function ClientDetail() {
           </p>
         </div>
         <button className="btn-secondary flex items-center gap-2">
-          <Edit className="w-4 h-4" />
-          Edit Client
+          ✏️ Edit Client
         </button>
         <button
           onClick={() => navigate(`/rate-sheets?client=${client.id}`)}
           className="btn-primary flex items-center gap-2"
         >
-          <FileSpreadsheet className="w-4 h-4" />
-          Generate Rate Sheet
+          📄 Generate Rate Sheet
         </button>
       </div>
 
@@ -309,8 +282,7 @@ export default function ClientDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Contact Info */}
         <div className="card">
-          <h3 className="card-header flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-gray-400" />
+          <h3 className="card-header">
             Contact Information
           </h3>
           <div className="space-y-3">
@@ -329,7 +301,7 @@ export default function ClientDetail() {
             )}
             {client.email && (
               <div className="flex items-center gap-3 text-sm">
-                <Mail className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-400">@</span>
                 <a href={`mailto:${client.email}`} className="text-primary-600 hover:underline">
                   {client.email}
                 </a>
@@ -337,7 +309,7 @@ export default function ClientDetail() {
             )}
             {client.phone && (
               <div className="flex items-center gap-3 text-sm">
-                <Phone className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-400">☎️</span>
                 <a href={`tel:${client.phone}`} className="text-gray-700 hover:text-gray-900">
                   {client.phone}
                 </a>
@@ -345,7 +317,7 @@ export default function ClientDetail() {
             )}
             {client.address && (
               <div className="flex items-start gap-3 text-sm">
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                <span className="text-gray-400 mt-0.5">📍</span>
                 <div className="text-gray-700">
                   <p>{client.address}</p>
                   <p>{client.city}, {client.province} {client.postal_code}</p>
@@ -357,8 +329,7 @@ export default function ClientDetail() {
 
         {/* Financial Info */}
         <div className="card">
-          <h3 className="card-header flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-gray-400" />
+          <h3 className="card-header">
             Financial Details
           </h3>
           <div className="space-y-4">
@@ -383,8 +354,7 @@ export default function ClientDetail() {
 
         {/* Stats */}
         <div className="card">
-          <h3 className="card-header flex items-center gap-2">
-            <Clock className="w-5 h-5 text-gray-400" />
+          <h3 className="card-header">
             Account Summary
           </h3>
           <div className="space-y-4">
@@ -420,8 +390,7 @@ export default function ClientDetail() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <RouteIcon className="w-4 h-4" />
-              Routes & Tariffs
+              🛤️ Routes & Tariffs
             </div>
           </button>
           <button
@@ -433,8 +402,7 @@ export default function ClientDetail() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Documents
+              📄 Documents
             </div>
           </button>
           <button
@@ -446,8 +414,7 @@ export default function ClientDetail() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <History className="w-4 h-4" />
-              Tariff History
+              📜 Tariff History
             </div>
           </button>
         </nav>
@@ -462,8 +429,7 @@ export default function ClientDetail() {
               onClick={openAddRouteModal}
               className="btn-primary flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" />
-              Add Route
+              + Add Route
             </button>
           </div>
           <div className="overflow-x-auto">
@@ -507,14 +473,14 @@ export default function ClientDetail() {
                           className="p-1 text-gray-400 hover:text-gray-600"
                           title="Edit route tariff"
                         >
-                          <Edit className="w-4 h-4" />
+                          ✏️
                         </button>
                         <button
                           onClick={() => handleDeleteRoute(cr)}
                           className="p-1 text-gray-400 hover:text-red-600"
                           title="Remove route"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          🗑️
                         </button>
                       </div>
                     </td>
@@ -525,7 +491,7 @@ export default function ClientDetail() {
           </div>
           {clientRoutes.length === 0 && (
             <div className="text-center py-12">
-              <RouteIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <span className="text-4xl text-gray-300 block mb-4">🛤️</span>
               <p className="text-gray-500">No routes configured</p>
               <p className="text-sm text-gray-400 mt-1">Add routes to start tracking tariffs</p>
             </div>
@@ -541,8 +507,7 @@ export default function ClientDetail() {
               onClick={() => setShowUploadDoc(true)}
               className="btn-primary flex items-center gap-2"
             >
-              <Upload className="w-4 h-4" />
-              Upload Document
+              ⬆️ Upload Document
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -553,7 +518,7 @@ export default function ClientDetail() {
               >
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5 text-red-600" />
+                    <span className="text-red-600 font-bold">PDF</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 truncate">{doc.document_name}</p>
@@ -573,12 +538,10 @@ export default function ClientDetail() {
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                   <button className="btn-secondary flex-1 text-sm py-1.5 flex items-center justify-center gap-1">
-                    <Eye className="w-4 h-4" />
-                    View
+                    👁️ View
                   </button>
                   <button className="btn-secondary flex-1 text-sm py-1.5 flex items-center justify-center gap-1">
-                    <Download className="w-4 h-4" />
-                    Download
+                    ⬇️ Download
                   </button>
                 </div>
               </div>
@@ -586,7 +549,7 @@ export default function ClientDetail() {
           </div>
           {documents.length === 0 && (
             <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <span className="text-4xl text-gray-300 block mb-4">📄</span>
               <p className="text-gray-500">No documents uploaded</p>
               <p className="text-sm text-gray-400 mt-1">Upload SLAs, contracts, and other documents</p>
             </div>
@@ -617,7 +580,7 @@ export default function ClientDetail() {
                     <tr key={history.id} className="hover:bg-gray-50">
                       <td className="table-cell">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-400">📅</span>
                           {formatDate(history.period_month, 'MMM yyyy')}
                         </div>
                       </td>
@@ -634,14 +597,8 @@ export default function ClientDetail() {
                       </td>
                       <td className="table-cell text-right">
                         <span className={`badge ${(history.adjustment_percentage || 0) >= 0 ? 'badge-danger' : 'badge-success'}`}>
-                          <span className="flex items-center gap-1">
-                            {(history.adjustment_percentage || 0) >= 0 ? (
-                              <TrendingUp className="w-3 h-3" />
-                            ) : (
-                              <TrendingDown className="w-3 h-3" />
-                            )}
-                            {formatPercentage(history.adjustment_percentage)}
-                          </span>
+                          {(history.adjustment_percentage || 0) >= 0 ? '↑' : '↓'}
+                          {Math.abs(history.adjustment_percentage || 0).toFixed(1)}%
                         </span>
                       </td>
                       <td className="table-cell text-right">
@@ -658,7 +615,7 @@ export default function ClientDetail() {
           </div>
           {tariffHistory.length === 0 && (
             <div className="text-center py-12">
-              <History className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <span className="text-4xl text-gray-300 block mb-4">📜</span>
               <p className="text-gray-500">No tariff history</p>
               <p className="text-sm text-gray-400 mt-1">History will appear as rates are adjusted</p>
             </div>
@@ -687,7 +644,7 @@ export default function ClientDetail() {
                   onClick={() => setShowAddRoute(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <span className="text-gray-500 text-xl">✕</span>
                 </button>
               </div>
             </div>
@@ -839,10 +796,7 @@ export default function ClientDetail() {
                       Saving...
                     </>
                   ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      {editingClientRoute ? 'Update Route' : 'Add Route'}
-                    </>
+                    editingClientRoute ? 'Update Route' : 'Add Route'
                   )}
                 </button>
               </div>

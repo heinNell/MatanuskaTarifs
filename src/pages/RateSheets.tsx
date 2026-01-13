@@ -1,30 +1,13 @@
-import
-    {
-        AlertCircle,
-        Building2,
-        Calendar,
-        ChevronDown,
-        Download,
-        Eye,
-        FileText,
-        ImagePlus,
-        Palette,
-        RefreshCw,
-        Save,
-        Settings2,
-        Upload,
-        X
-    } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import
-    {
-        downloadPdf,
-        generateClientRateSheet,
-        openPdfInNewTab,
-        type OrganizationBranding,
-        type RateSheetData,
-    } from '../lib/pdfGenerator'
+  {
+    downloadPdf,
+    generateClientRateSheet,
+    openPdfInNewTab,
+    type OrganizationBranding,
+    type RateSheetData,
+  } from '../lib/pdfGenerator'
 import { supabase } from '../lib/supabase'
 import { formatCurrency, formatDate } from '../lib/utils'
 import type { Client, ClientRoute, Route } from '../types'
@@ -464,21 +447,20 @@ export default function RateSheets() {
           onClick={openBrandingModal}
           className="btn-secondary flex items-center gap-2"
         >
-          <Palette className="w-4 h-4" />
-          Branding Settings
+          🎨 Branding Settings
         </button>
       </div>
 
       {/* Error Banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <span className="text-red-500 flex-shrink-0">⚠️</span>
           <p className="text-red-700">{error}</p>
           <button
             onClick={() => setError(null)}
             className="ml-auto p-1 hover:bg-red-100 rounded"
           >
-            <X className="w-4 h-4 text-red-500" />
+            ✕
           </button>
         </div>
       )}
@@ -495,8 +477,7 @@ export default function RateSheets() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Generate Rate Sheet
+              📄 Generate Rate Sheet
             </div>
           </button>
           <button
@@ -508,8 +489,7 @@ export default function RateSheets() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <Palette className="w-4 h-4" />
-              Branding Preview
+              🎨 Branding Preview
             </div>
           </button>
         </nav>
@@ -521,8 +501,7 @@ export default function RateSheets() {
           <div className="lg:col-span-2 space-y-6">
             {/* Client Selection */}
             <div className="card">
-              <h3 className="card-header flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-gray-400" />
+              <h3 className="card-header">
                 Select Client
               </h3>
               <div className="relative">
@@ -541,7 +520,7 @@ export default function RateSheets() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">▼</span>
               </div>
 
               {selectedClient && (
@@ -558,9 +537,8 @@ export default function RateSheets() {
 
             {/* Date & Reference */}
             <div className="card">
-              <h3 className="card-header flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                Validity Period
+              <h3 className="card-header">
+                📅 Date & Reference
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -601,7 +579,7 @@ export default function RateSheets() {
                       className="btn-secondary px-3"
                       title="Generate new reference"
                     >
-                      <RefreshCw className="w-4 h-4" />
+                      ↻
                     </button>
                   </div>
                 </div>
@@ -663,9 +641,8 @@ export default function RateSheets() {
 
             {/* Custom Notes */}
             <div className="card">
-              <h3 className="card-header flex items-center gap-2">
-                <FileText className="w-5 h-5 text-gray-400" />
-                Custom Notes
+              <h3 className="card-header">
+                📝 Custom Notes
               </h3>
               <textarea
                 value={customNotes}
@@ -685,7 +662,6 @@ export default function RateSheets() {
                   onClick={saveDefaultNotes}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
                 >
-                  <Save className="w-4 h-4" />
                   Save as Default
                 </button>
               </div>
@@ -693,8 +669,7 @@ export default function RateSheets() {
 
             {/* Terms & Conditions */}
             <div className="card">
-              <h3 className="card-header flex items-center gap-2">
-                <Settings2 className="w-5 h-5 text-gray-400" />
+              <h3 className="card-header">
                 Terms & Conditions
               </h3>
               <textarea
@@ -714,8 +689,7 @@ export default function RateSheets() {
                   onClick={saveDefaultTerms}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
                 >
-                  <Save className="w-4 h-4" />
-                  Save as Default Template
+                  Save as Default
                 </button>
               </div>
               <p className="mt-2 text-xs text-gray-500">
@@ -731,7 +705,7 @@ export default function RateSheets() {
             <div className="card bg-gradient-to-br from-primary-50 to-blue-50 border-primary-200">
               <div className="text-center">
                 <div className="w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-8 h-8 text-primary-600" />
+                  <span className="text-3xl text-primary-600">📄</span>
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1">Rate Sheet Preview</h3>
                 <p className="text-sm text-gray-600 mb-4">
@@ -744,8 +718,7 @@ export default function RateSheets() {
                     disabled={!selectedClient || generating}
                     className="btn-secondary w-full flex items-center justify-center gap-2"
                   >
-                    <Eye className="w-4 h-4" />
-                    Preview PDF
+                    👁️ Preview PDF
                   </button>
                   <button
                     onClick={() => handleGeneratePdf(false)}
@@ -758,10 +731,7 @@ export default function RateSheets() {
                         Generating...
                       </>
                     ) : (
-                      <>
-                        <Download className="w-4 h-4" />
-                        Download PDF
-                      </>
+                      '⬇️ Download PDF'
                     )}
                   </button>
                 </div>
@@ -770,8 +740,7 @@ export default function RateSheets() {
 
             {/* Branding Preview */}
             <div className="card">
-              <h3 className="card-header flex items-center gap-2">
-                <Palette className="w-5 h-5 text-gray-400" />
+              <h3 className="card-header">
                 Current Branding
               </h3>
               <div className="space-y-3">
@@ -817,8 +786,7 @@ export default function RateSheets() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Branding Form */}
           <div className="card">
-            <h3 className="card-header flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-gray-400" />
+            <h3 className="card-header">
               Organization Details
             </h3>
             <div className="space-y-4">
@@ -840,12 +808,12 @@ export default function RateSheets() {
                         className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                         title="Remove logo"
                       >
-                        <X className="w-3 h-3" />
+                        ✕
                       </button>
                     </div>
                   ) : (
                     <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-                      <ImagePlus className="w-8 h-8 text-gray-400" />
+                      <span className="text-gray-400 text-2xl">🖼️</span>
                     </div>
                   )}
                   <div className="flex-1">
@@ -864,10 +832,7 @@ export default function RateSheets() {
                             Uploading...
                           </>
                         ) : (
-                          <>
-                            <Upload className="w-4 h-4" />
-                            {branding.logoBase64 ? 'Change Logo' : 'Upload Logo'}
-                          </>
+                          branding.logoBase64 ? 'Change Logo' : '⬆️ Upload Logo'
                         )}
                       </span>
                     </label>
@@ -1016,14 +981,12 @@ export default function RateSheets() {
                 onClick={() => setBranding(defaultBranding)}
                 className="btn-secondary flex items-center gap-2"
               >
-                <RefreshCw className="w-4 h-4" />
-                Reset to Default
+                ↻ Reset to Default
               </button>
               <button
                 onClick={() => saveBranding(branding)}
                 className="btn-primary flex items-center gap-2"
               >
-                <Save className="w-4 h-4" />
                 Save Branding
               </button>
             </div>
@@ -1100,7 +1063,7 @@ export default function RateSheets() {
                   onClick={() => setShowBrandingModal(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  ✕
                 </button>
               </div>
             </div>
@@ -1124,12 +1087,12 @@ export default function RateSheets() {
                         className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
                         title="Remove logo"
                       >
-                        <X className="w-3 h-3" />
+                        ✕
                       </button>
                     </div>
                   ) : (
                     <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-                      <ImagePlus className="w-6 h-6 text-gray-400" />
+                      <span className="text-gray-400 text-xl">🖼️</span>
                     </div>
                   )}
                   <label className="cursor-pointer">
@@ -1149,8 +1112,7 @@ export default function RateSheets() {
                       className="hidden"
                     />
                     <span className="btn-secondary text-sm inline-flex items-center gap-2">
-                      <Upload className="w-4 h-4" />
-                      {tempBranding.logoBase64 ? 'Change' : 'Upload'}
+                      {tempBranding.logoBase64 ? 'Change' : '⬆️ Upload'}
                     </span>
                   </label>
                 </div>
@@ -1297,7 +1259,6 @@ export default function RateSheets() {
                 onClick={() => saveBranding()}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
-                <Save className="w-4 h-4" />
                 Save Branding
               </button>
             </div>

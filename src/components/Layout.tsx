@@ -1,41 +1,50 @@
-import {
-    ChevronRight,
-    FileSpreadsheet,
-    FileText,
-    Fuel,
-    Gauge,
-    History,
-    LayoutDashboard,
-    LogOut,
-    Menu,
-    Route,
-    Settings,
-    Users,
-    X,
-} from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useSupabase } from '../context/SupabaseContext'
+import { supabase } from '../lib/supabase'
+import { formatCurrency } from '../lib/utils'
 
 interface LayoutProps {
   children: React.ReactNode
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Master Control', href: '/master-control', icon: Gauge },
-  { name: 'Clients', href: '/clients', icon: Users },
-  { name: 'Routes', href: '/routes', icon: Route },
-  { name: 'Rate Sheets', href: '/rate-sheets', icon: FileSpreadsheet },
-  { name: 'Tariff History', href: '/tariff-history', icon: History },
-  { name: 'Documents', href: '/documents', icon: FileText },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: '/', label: 'D' },
+  { name: 'Master Control', href: '/master-control', label: 'M' },
+  { name: 'Clients', href: '/clients', label: 'C' },
+  { name: 'Routes', href: '/routes', label: 'R' },
+  { name: 'Rate Sheets', href: '/rate-sheets', label: 'S' },
+  { name: 'Tariff History', href: '/tariff-history', label: 'H' },
+  { name: 'Documents', href: '/documents', label: 'F' },
+  { name: 'Settings', href: '/settings', label: '⚙' },
 ]
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [dieselPrice, setDieselPrice] = useState<number | null>(null)
   const { user, signOut } = useSupabase()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    loadDieselPrice()
+  }, [])
+
+  async function loadDieselPrice() {
+    try {
+      const { data } = await supabase
+        .from('diesel_prices')
+        .select('price_per_liter')
+        .order('price_date', { ascending: false })
+        .limit(1)
+        .single()
+      
+      if (data) {
+        setDieselPrice(data.price_per_liter)
+      }
+    } catch (error) {
+      console.error('Error loading diesel price:', error)
+    }
+  }
 
   const handleSignOut = async () => {
     await signOut()
@@ -62,7 +71,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-              <Fuel className="w-6 h-6 text-white" />
+              <span className="text-xl font-bold text-white">M</span>
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900">Matanuska</h1>
@@ -73,7 +82,7 @@ export default function Layout({ children }: LayoutProps) {
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden text-gray-500 hover:text-gray-700"
           >
-            <X className="w-5 h-5" />
+            ✕
           </button>
         </div>
 
@@ -88,9 +97,9 @@ export default function Layout({ children }: LayoutProps) {
                 isActive ? 'sidebar-link-active' : 'sidebar-link'
               }
             >
-              <item.icon className="w-5 h-5" />
+              <span className="w-5 h-5 flex items-center justify-center text-sm font-semibold">{item.label}</span>
               <span>{item.name}</span>
-              <ChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100" />
+              <span className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100">→</span>
             </NavLink>
           ))}
         </nav>
@@ -114,7 +123,7 @@ export default function Layout({ children }: LayoutProps) {
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
               title="Sign out"
             >
-              <LogOut className="w-4 h-4" />
+              ↪
             </button>
           </div>
         </div>
@@ -128,13 +137,15 @@ export default function Layout({ children }: LayoutProps) {
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
           >
-            <Menu className="w-5 h-5" />
+            ☰
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-xs text-gray-500">Current Diesel Price</p>
-              <p className="text-sm font-semibold text-gray-900">R 23.75 / L</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {dieselPrice !== null ? `${formatCurrency(dieselPrice)} / L` : 'Loading...'}
+              </p>
             </div>
           </div>
         </header>

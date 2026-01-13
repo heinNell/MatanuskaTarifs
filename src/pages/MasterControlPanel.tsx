@@ -1,42 +1,10 @@
-import
-    {
-        AlertTriangle,
-        Calculator,
-        Calendar,
-        CheckCircle,
-        Fuel,
-        Info,
-        Play,
-        RefreshCw,
-        Save,
-        Settings,
-        TrendingDown,
-        TrendingUp,
-    } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { supabase } from '../lib/supabase'
 import { calculateAdjustedRate, formatCurrency, formatDate, formatPercentage, roundToDecimal } from '../lib/utils'
-import type { DieselPrice, RateCalculation } from '../types'
+import type { ClientRoute, DieselPrice, RateCalculation, Route } from '../types'
 
-// Demo data
-const demoDieselPrices: DieselPrice[] = [
-  { id: '1', price_date: '2025-01-01', price_per_liter: 21.50, previous_price: null, percentage_change: null, notes: 'Base price', created_at: '', updated_at: '', created_by: null },
-  { id: '2', price_date: '2025-02-01', price_per_liter: 21.85, previous_price: 21.50, percentage_change: 1.63, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '3', price_date: '2025-03-01', price_per_liter: 22.10, previous_price: 21.85, percentage_change: 1.14, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '4', price_date: '2025-04-01', price_per_liter: 21.95, previous_price: 22.10, percentage_change: -0.68, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '5', price_date: '2025-05-01', price_per_liter: 22.30, previous_price: 21.95, percentage_change: 1.59, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '6', price_date: '2025-06-01', price_per_liter: 22.75, previous_price: 22.30, percentage_change: 2.02, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '7', price_date: '2025-07-01', price_per_liter: 23.10, previous_price: 22.75, percentage_change: 1.54, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '8', price_date: '2025-08-01', price_per_liter: 22.90, previous_price: 23.10, percentage_change: -0.87, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '9', price_date: '2025-09-01', price_per_liter: 22.65, previous_price: 22.90, percentage_change: -1.09, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '10', price_date: '2025-10-01', price_per_liter: 22.80, previous_price: 22.65, percentage_change: 0.66, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '11', price_date: '2025-11-01', price_per_liter: 23.15, previous_price: 22.80, percentage_change: 1.54, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '12', price_date: '2025-12-01', price_per_liter: 23.45, previous_price: 23.15, percentage_change: 1.30, notes: null, created_at: '', updated_at: '', created_by: null },
-  { id: '13', price_date: '2026-01-01', price_per_liter: 23.75, previous_price: 23.45, percentage_change: 1.28, notes: 'Current price', created_at: '', updated_at: '', created_by: null },
-]
-
-const demoSettings: Record<string, string> = {
+const defaultSettings: Record<string, string> = {
   base_diesel_price: '21.50',
   diesel_impact_percentage: '35',
   auto_adjust_threshold: '2.5',
@@ -45,19 +13,12 @@ const demoSettings: Record<string, string> = {
   effective_day_of_month: '1',
 }
 
-const demoRateCalculations: RateCalculation[] = [
-  { clientRouteId: '1', clientName: 'ABC Manufacturing', routeCode: 'JHB-CPT', currentRate: 4950, baseRate: 4500, proposedRate: 5071.50, adjustmentPercentage: 2.45, dieselImpact: 0.85 },
-  { clientRouteId: '2', clientName: 'ABC Manufacturing', routeCode: 'JHB-DBN', currentRate: 2420, baseRate: 2200, proposedRate: 2479.40, adjustmentPercentage: 2.45, dieselImpact: 0.85 },
-  { clientRouteId: '3', clientName: 'Cape Foods', routeCode: 'JHB-CPT', currentRate: 4950, baseRate: 4500, proposedRate: 5071.50, adjustmentPercentage: 2.45, dieselImpact: 0.85 },
-  { clientRouteId: '4', clientName: 'Cape Foods', routeCode: 'CPT-PE', currentRate: 3080, baseRate: 2800, proposedRate: 3155.60, adjustmentPercentage: 2.45, dieselImpact: 0.85 },
-  { clientRouteId: '5', clientName: 'Durban Chemical', routeCode: 'JHB-DBN', currentRate: 2640, baseRate: 2400, proposedRate: 2704.80, adjustmentPercentage: 2.45, dieselImpact: 0.85 },
-]
-
 export default function MasterControlPanel() {
-  const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>(demoDieselPrices)
-  const [settings, setSettings] = useState<Record<string, string>>(demoSettings)
-  const [rateCalculations, setRateCalculations] = useState<RateCalculation[]>(demoRateCalculations)
-  const [_loading, setLoading] = useState(true)
+  const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([])
+  const [settings, setSettings] = useState<Record<string, string>>(defaultSettings)
+  const [rateCalculations, setRateCalculations] = useState<RateCalculation[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [showAddPrice, setShowAddPrice] = useState(false)
   const [newPriceDate, setNewPriceDate] = useState('')
@@ -72,58 +33,96 @@ export default function MasterControlPanel() {
   }, [])
 
   async function loadData() {
+    setLoading(true)
+    setError(null)
+    
     try {
-      const { data: prices } = await supabase
+      // Load diesel prices
+      const { data: prices, error: pricesError } = await supabase
         .from('diesel_prices')
         .select('*')
         .order('price_date', { ascending: true })
 
-      if (prices && prices.length > 0) {
-        setDieselPrices(prices)
-      }
+      if (pricesError) throw pricesError
+      setDieselPrices(prices || [])
 
-      const { data: settingsData } = await supabase
+      // Load settings
+      const { data: settingsData, error: settingsError } = await supabase
         .from('master_control_settings')
         .select('*')
 
-      if (settingsData) {
-        const settingsMap: Record<string, string> = {}
+      if (settingsError) throw settingsError
+      
+      if (settingsData && settingsData.length > 0) {
+        const settingsMap: Record<string, string> = { ...defaultSettings }
         settingsData.forEach(s => {
           settingsMap[s.setting_key] = s.setting_value
         })
-        setSettings(prev => ({ ...prev, ...settingsMap }))
+        setSettings(settingsMap)
       }
 
       // Load client routes for rate calculations
-      await calculateProposedRates()
-    } catch (error) {
-      console.log('Using demo data:', error)
+      await loadClientRoutes(prices || [])
+    } catch (err) {
+      console.error('Error loading data:', err)
+      setError('Failed to load data')
     } finally {
       setLoading(false)
     }
   }
 
-  async function calculateProposedRates() {
-    const currentPrice = dieselPrices[dieselPrices.length - 1]
+  async function loadClientRoutes(prices: DieselPrice[]) {
+    try {
+      const { data: clientRoutes, error: routesError } = await supabase
+        .from('client_routes')
+        .select(`
+          *,
+          client:clients(id, client_code, company_name),
+          route:routes(id, route_code, origin, destination)
+        `)
+        .eq('is_active', true)
+
+      if (routesError) throw routesError
+
+      if (clientRoutes && clientRoutes.length > 0) {
+        calculateProposedRates(clientRoutes, prices)
+      }
+    } catch (err) {
+      console.error('Error loading client routes:', err)
+    }
+  }
+
+  function calculateProposedRates(clientRoutes: (ClientRoute & { client?: { company_name: string }, route?: Route })[], prices: DieselPrice[]) {
+    const currentPrice = prices[prices.length - 1]
     const basePrice = parseFloat(settings.base_diesel_price)
     const impactPercent = parseFloat(settings.diesel_impact_percentage)
     
-    if (!currentPrice) return
+    if (!currentPrice) {
+      setRateCalculations([])
+      return
+    }
 
     const dieselChangePercent = ((currentPrice.price_per_liter - basePrice) / basePrice) * 100
     
-    // Update demo calculations with actual values
-    const updated = demoRateCalculations.map(calc => {
-      const proposedRate = calculateAdjustedRate(calc.baseRate, dieselChangePercent, impactPercent)
-      const adjustmentPercentage = ((proposedRate - calc.currentRate) / calc.currentRate) * 100
+    const calculations: RateCalculation[] = clientRoutes.map(cr => {
+      const proposedRate = calculateAdjustedRate(cr.base_rate, dieselChangePercent, impactPercent)
+      const adjustmentPercentage = cr.current_rate > 0 
+        ? ((proposedRate - cr.current_rate) / cr.current_rate) * 100 
+        : 0
+      
       return {
-        ...calc,
+        clientRouteId: cr.id,
+        clientName: cr.client?.company_name || 'Unknown',
+        routeCode: cr.route?.route_code || 'N/A',
+        currentRate: cr.current_rate,
+        baseRate: cr.base_rate,
         proposedRate: roundToDecimal(proposedRate, 2),
         adjustmentPercentage: roundToDecimal(adjustmentPercentage, 2),
         dieselImpact: roundToDecimal(dieselChangePercent * (impactPercent / 100), 2),
       }
     })
-    setRateCalculations(updated)
+    
+    setRateCalculations(calculations)
   }
 
   async function handleAddDieselPrice(e: React.FormEvent) {
@@ -180,7 +179,8 @@ export default function MasterControlPanel() {
           .update({ setting_value: value })
           .eq('setting_key', key)
       }
-      await calculateProposedRates()
+      // Reload data to recalculate rates with new settings
+      await loadData()
     } catch (error) {
       console.error('Error saving settings:', error)
     } finally {
@@ -220,7 +220,7 @@ export default function MasterControlPanel() {
       }
 
       // Refresh calculations
-      await calculateProposedRates()
+      await loadData()
       setSelectedCalculations([])
     } catch (error) {
       console.error('Error applying rates:', error)
@@ -255,8 +255,27 @@ export default function MasterControlPanel() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Loading data...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+          <span className="text-red-600 text-xl">⚠️</span>
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -267,8 +286,7 @@ export default function MasterControlPanel() {
           onClick={() => setShowAddPrice(true)}
           className="btn-primary flex items-center gap-2"
         >
-          <Fuel className="w-4 h-4" />
-          Add New Price
+          + Add New Price
         </button>
       </div>
 
@@ -277,7 +295,7 @@ export default function MasterControlPanel() {
         <div className="stat-card">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-              <Fuel className="w-5 h-5 text-amber-600" />
+              <span className="text-lg font-bold text-amber-600">D</span>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider">Current Price</p>
@@ -291,7 +309,7 @@ export default function MasterControlPanel() {
         <div className="stat-card">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Calculator className="w-5 h-5 text-blue-600" />
+              <span className="text-lg font-bold text-blue-600">B</span>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider">Base Price</p>
@@ -305,11 +323,9 @@ export default function MasterControlPanel() {
         <div className="stat-card">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${totalDieselChange >= 0 ? 'bg-red-100' : 'bg-green-100'}`}>
-              {totalDieselChange >= 0 ? (
-                <TrendingUp className={`w-5 h-5 ${totalDieselChange >= 0 ? 'text-red-600' : 'text-green-600'}`} />
-              ) : (
-                <TrendingDown className="w-5 h-5 text-green-600" />
-              )}
+              <span className={`text-lg font-bold ${totalDieselChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                {totalDieselChange >= 0 ? '↑' : '↓'}
+              </span>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider">Total Change</p>
@@ -323,7 +339,7 @@ export default function MasterControlPanel() {
         <div className="stat-card">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Settings className="w-5 h-5 text-purple-600" />
+              <span className="text-lg font-bold text-purple-600">%</span>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider">Diesel Impact</p>
@@ -378,8 +394,7 @@ export default function MasterControlPanel() {
 
         {/* Settings Panel */}
         <div className="card">
-          <h2 className="card-header flex items-center gap-2">
-            <Settings className="w-5 h-5" />
+          <h2 className="card-header">
             Calculation Settings
           </h2>
           <div className="space-y-4">
@@ -442,12 +457,7 @@ export default function MasterControlPanel() {
               disabled={saving}
               className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              {saving ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              Save Settings
+              {saving ? 'Saving...' : 'Save Settings'}
             </button>
           </div>
         </div>
@@ -464,30 +474,24 @@ export default function MasterControlPanel() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => calculateProposedRates()}
+              onClick={() => loadData()}
               className="btn-secondary flex items-center gap-2"
             >
-              <RefreshCw className="w-4 h-4" />
-              Recalculate
+              ↻ Recalculate
             </button>
             <button
               onClick={handleApplySelectedRates}
               disabled={selectedCalculations.length === 0 || applyingRates}
               className="btn-success flex items-center gap-2"
             >
-              {applyingRates ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Play className="w-4 h-4" />
-              )}
-              Apply Selected ({selectedCalculations.length})
+              {applyingRates ? 'Applying...' : `▶ Apply Selected (${selectedCalculations.length})`}
             </button>
           </div>
         </div>
 
         {/* Info banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <span className="text-blue-600 flex-shrink-0 mt-0.5">ℹ️</span>
           <div>
             <p className="text-sm text-blue-800">
               <strong>Rate Calculation Formula:</strong> New Rate = Base Rate × (1 + Diesel Change % × Impact %)
@@ -553,13 +557,11 @@ export default function MasterControlPanel() {
                   <td className="table-cell text-center">
                     {calc.adjustmentPercentage > parseFloat(settings.max_monthly_increase) ? (
                       <span className="badge badge-warning flex items-center gap-1 justify-center">
-                        <AlertTriangle className="w-3 h-3" />
-                        Exceeds Max
+                        ⚠️ Exceeds Max
                       </span>
                     ) : (
                       <span className="badge badge-success flex items-center gap-1 justify-center">
-                        <CheckCircle className="w-3 h-3" />
-                        Ready
+                        ✓ Ready
                       </span>
                     )}
                   </td>
@@ -567,6 +569,12 @@ export default function MasterControlPanel() {
               ))}
             </tbody>
           </table>
+          {rateCalculations.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No rate calculations available</p>
+              <p className="text-sm text-gray-400 mt-1">Add client routes to see proposed adjustments</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -589,7 +597,7 @@ export default function MasterControlPanel() {
                 <tr key={price.id} className="hover:bg-gray-50">
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-400">📅</span>
                       {formatDate(price.price_date, 'dd MMM yyyy')}
                     </div>
                   </td>
@@ -674,12 +682,7 @@ export default function MasterControlPanel() {
                   disabled={saving}
                   className="btn-primary flex-1 flex items-center justify-center gap-2"
                 >
-                  {saving ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Save Price
+                  {saving ? 'Saving...' : 'Save Price'}
                 </button>
               </div>
             </form>

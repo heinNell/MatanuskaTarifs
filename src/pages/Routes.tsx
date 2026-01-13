@@ -1,17 +1,3 @@
-import
-    {
-        AlertCircle,
-        Clock,
-        Edit,
-        MapPin,
-        Navigation,
-        Plus,
-        Route as RouteIcon,
-        Save,
-        Search,
-        Trash2,
-        X,
-    } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatNumber } from '../lib/utils'
@@ -186,13 +172,13 @@ export default function RoutesPage() {
       {/* Error Banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <span className="text-red-500 flex-shrink-0">⚠️</span>
           <p className="text-red-700">{error}</p>
           <button
             onClick={() => setError(null)}
             className="ml-auto p-1 hover:bg-red-100 rounded"
           >
-            <X className="w-4 h-4 text-red-500" />
+            ✕
           </button>
         </div>
       )}
@@ -204,8 +190,7 @@ export default function RoutesPage() {
           <p className="text-gray-500 mt-1">Manage transportation routes</p>
         </div>
         <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Add Route
+          + Add Route
         </button>
       </div>
 
@@ -213,7 +198,7 @@ export default function RoutesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-            <RouteIcon className="w-6 h-6 text-blue-600" />
+            <span className="text-xl font-bold text-blue-600">R</span>
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900">{routes.length}</p>
@@ -222,7 +207,7 @@ export default function RoutesPage() {
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
           <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-            <Navigation className="w-6 h-6 text-green-600" />
+            <span className="text-xl font-bold text-green-600">✓</span>
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900">{activeRoutes}</p>
@@ -231,7 +216,7 @@ export default function RoutesPage() {
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
           <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-            <MapPin className="w-6 h-6 text-purple-600" />
+            <span className="text-xl font-bold text-purple-600">📍</span>
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900">{formatNumber(totalDistance)} km</p>
@@ -243,7 +228,7 @@ export default function RoutesPage() {
       {/* Search */}
       <div className="card">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
           <input
             type="text"
             placeholder="Search routes..."
@@ -280,13 +265,13 @@ export default function RoutesPage() {
                   </td>
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-green-500" />
+                      <span className="text-green-500">⬤</span>
                       {route.origin}
                     </div>
                   </td>
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-red-500" />
+                      <span className="text-red-500">⬤</span>
                       {route.destination}
                     </div>
                   </td>
@@ -296,7 +281,7 @@ export default function RoutesPage() {
                   <td className="table-cell text-right">
                     {route.estimated_hours ? (
                       <div className="flex items-center justify-end gap-1">
-                        <Clock className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-400">⏱️</span>
                         {route.estimated_hours}h
                       </div>
                     ) : '-'}
@@ -315,13 +300,13 @@ export default function RoutesPage() {
                         onClick={() => openEditModal(route)}
                         className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
                       >
-                        <Edit className="w-4 h-4" />
+                        ✏️
                       </button>
                       <button
                         onClick={() => handleDelete(route)}
                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        🗑️
                       </button>
                     </div>
                   </td>
@@ -333,7 +318,7 @@ export default function RoutesPage() {
 
         {filteredRoutes.length === 0 && (
           <div className="text-center py-12">
-            <RouteIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <span className="text-4xl text-gray-300 block mb-4">🛤️</span>
             <p className="text-gray-500">No routes found</p>
           </div>
         )}
@@ -351,7 +336,7 @@ export default function RoutesPage() {
                 onClick={() => setShowModal(false)}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
               >
-                <X className="w-5 h-5" />
+                ✕
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -462,7 +447,6 @@ export default function RoutesPage() {
                   disabled={saving}
                   className="btn-primary flex-1 flex items-center justify-center gap-2"
                 >
-                  <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : editingRoute ? 'Update' : 'Add Route'}
                 </button>
               </div>
