@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatCurrency } from '../lib/utils'
 import type { Client, ClientFormData } from '../types'
@@ -228,11 +229,14 @@ export default function Clients() {
           {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-          <p className="text-gray-500 mt-1">Manage your client profiles and tariffs</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Clients</h1>
+          <p className="text-gray-500 mt-2">Manage your client profiles and tariffs</p>
         </div>
-        <button onClick={openAddModal} className="btn-primary">
-          + Add Client
+        <button onClick={openAddModal} className="btn-primary inline-flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add Client
         </button>
       </div>
 
@@ -240,25 +244,33 @@ export default function Clients() {
       <div className="card">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+            </div>
             <input
               type="text"
-              placeholder="Search clients..."
+              placeholder="Search clients by name, code, or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-4"
+              className="input-field pl-11"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-              className="select-field"
+              className="select-field min-w-[140px]"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
-            <button className="btn-secondary">
+            <button className="btn-secondary inline-flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
               Export
             </button>
           </div>
@@ -267,50 +279,63 @@ export default function Clients() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-            <span className="text-blue-600 font-bold text-lg">T</span>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{clients.length}</p>
-            <p className="text-sm text-gray-500">Total Clients</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-            <span className="text-green-600 font-bold text-lg">A</span>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{clients.filter(c => c.is_active).length}</p>
-            <p className="text-sm text-gray-500">Active Clients</p>
+        <div className="stat-card stat-card-blue">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-gray-900">{clients.length}</p>
+              <p className="text-sm font-medium text-gray-500">Total Clients</p>
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-          <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-            <span className="text-purple-600 font-bold text-lg">P</span>
+        <div className="stat-card stat-card-green">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/30">
+              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-gray-900">{clients.filter(c => c.is_active).length}</p>
+              <p className="text-sm font-medium text-gray-500">Active Clients</p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">
-              {new Set(clients.map(c => c.province).filter(Boolean)).size}
-            </p>
-            <p className="text-sm text-gray-500">Provinces Covered</p>
+        </div>
+        <div className="stat-card stat-card-purple">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-gray-900">
+                {new Set(clients.map(c => c.province).filter(Boolean)).size}
+              </p>
+              <p className="text-sm font-medium text-gray-500">Provinces Covered</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Clients Table */}
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="table-container">
+          <table className="w-full table-responsive">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="table-header">Client</th>
-                <th className="table-header">Contact</th>
-                <th className="table-header">Location</th>
-                <th className="table-header text-right">Credit Limit</th>
-                <th className="table-header text-center">Payment Terms</th>
-                <th className="table-header text-center">Status</th>
-                <th className="table-header text-right">Actions</th>
+                <th className="table-header" style={{ minWidth: '220px' }}>Client</th>
+                <th className="table-header" style={{ minWidth: '180px' }}>Contact</th>
+                <th className="table-header" style={{ minWidth: '120px' }}>Location</th>
+                <th className="table-header text-right" style={{ minWidth: '120px' }}>Credit Limit</th>
+                <th className="table-header text-center" style={{ minWidth: '100px' }}>Terms</th>
+                <th className="table-header text-center" style={{ minWidth: '90px' }}>Status</th>
+                <th className="table-header text-right" style={{ minWidth: '100px' }}>Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -318,8 +343,8 @@ export default function Clients() {
                 <tr key={client.id} className="hover:bg-gray-50 transition-colors">
                   <td className="table-cell">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-primary-700 font-bold">
+                      <div className="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-primary-700 font-bold text-sm">
                           {client.company_name.charAt(0)}
                         </span>
                       </div>
@@ -382,21 +407,21 @@ export default function Clients() {
                         className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                         title="View details"
                       >
-                        👁️
+                        <Eye className="w-4 h-4" />
                       </Link>
                       <button
                         onClick={() => openEditModal(client)}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Edit client"
                       >
-                        ✏️
+                        <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(client)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete client"
                       >
-                        🗑️
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>

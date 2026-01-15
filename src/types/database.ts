@@ -28,6 +28,7 @@ export interface Client {
   registration_number: string | null
   payment_terms: number
   credit_limit: number | null
+  currency: 'ZAR' | 'USD'
   is_active: boolean
   notes: string | null
   created_at: string
@@ -55,6 +56,7 @@ export interface ClientRoute {
   base_rate: number
   current_rate: number
   rate_type: string
+  currency: 'ZAR' | 'USD'
   minimum_charge: number | null
   effective_date: string
   is_active: boolean
@@ -74,6 +76,7 @@ export interface TariffHistory {
   period_month: string
   previous_rate: number | null
   new_rate: number
+  currency: 'ZAR' | 'USD'
   diesel_price_at_change: number | null
   diesel_percentage_change: number | null
   adjustment_percentage: number | null

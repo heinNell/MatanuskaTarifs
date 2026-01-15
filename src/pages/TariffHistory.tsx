@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Calendar } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatCurrency, formatDate, formatPercentage } from '../lib/utils'
 import type { TariffHistory } from '../types'
@@ -191,19 +192,20 @@ export default function TariffHistoryPage() {
       </div>
 
       {/* History Table */}
-      <div className="card">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="card overflow-hidden">
+        <div className="table-container">
+          <table className="w-full table-responsive">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="table-header">Period</th>
-                <th className="table-header">Client</th>
-                <th className="table-header">Route</th>
-                <th className="table-header text-right">Previous Rate</th>
-                <th className="table-header text-right">New Rate</th>
-                <th className="table-header text-right">Adjustment</th>
-                <th className="table-header text-right">Diesel Price</th>
-                <th className="table-header">Reason</th>
+                <th className="table-header" style={{ minWidth: '100px' }}>Period</th>
+                <th className="table-header" style={{ minWidth: '150px' }}>Client</th>
+                <th className="table-header" style={{ minWidth: '130px' }}>Route</th>
+                <th className="table-header text-right" style={{ minWidth: '100px' }}>Prev Rate</th>
+                <th className="table-header text-right" style={{ minWidth: '100px' }}>New Rate</th>
+                <th className="table-header" style={{ minWidth: '70px' }}>Currency</th>
+                <th className="table-header text-right" style={{ minWidth: '90px' }}>Adjustment</th>
+                <th className="table-header text-right" style={{ minWidth: '100px' }}>Diesel Price</th>
+                <th className="table-header" style={{ minWidth: '100px' }}>Reason</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -211,7 +213,8 @@ export default function TariffHistoryPage() {
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
-                      📅 {formatDate(item.period_month, 'MMM yyyy')}
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      {formatDate(item.period_month, 'MMM yyyy')}
                     </div>
                   </td>
                   <td className="table-cell">
@@ -232,10 +235,15 @@ export default function TariffHistoryPage() {
                     </p>
                   </td>
                   <td className="table-cell text-right text-gray-500">
-                    {formatCurrency(item.previous_rate)}
+                    {formatCurrency(item.previous_rate, item.currency || 'ZAR')}
                   </td>
                   <td className="table-cell text-right font-semibold">
-                    {formatCurrency(item.new_rate)}
+                    {formatCurrency(item.new_rate, item.currency || 'ZAR')}
+                  </td>
+                  <td className="table-cell">
+                    <span className={`badge ${item.currency === 'USD' ? 'badge-info' : 'badge-success'}`}>
+                      {item.currency === 'USD' ? 'USD' : 'ZAR'}
+                    </span>
                   </td>
                   <td className="table-cell text-right">
                     <span className={`badge ${(item.adjustment_percentage || 0) >= 0 ? 'badge-danger' : 'badge-success'}`}>

@@ -4,7 +4,6 @@ import { useSupabase } from './context/SupabaseContext'
 import ClientDetail from './pages/ClientDetail'
 import Clients from './pages/Clients'
 import Dashboard from './pages/Dashboard'
-import Documents from './pages/Documents'
 import Login from './pages/Login'
 import MasterControlPanel from './pages/MasterControlPanel'
 import RateSheets from './pages/RateSheets'
@@ -43,7 +42,6 @@ function App() {
                   <Route path="/routes" element={<RoutesPage />} />
                   <Route path="/rate-sheets" element={<RateSheets />} />
                   <Route path="/tariff-history" element={<TariffHistory />} />
-                  <Route path="/documents" element={<Documents />} />
                   <Route path="/settings" element={<Settings />} />
                 </Routes>
               </Layout>

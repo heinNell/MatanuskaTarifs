@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Check, BarChart3, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 // Default settings
@@ -90,7 +91,12 @@ export default function Settings() {
           disabled={saving}
           className="btn-primary flex items-center gap-2"
         >
-          {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
+          {saving ? 'Saving...' : saved ? (
+            <>
+              <Check className="w-4 h-4" />
+              Saved!
+            </>
+          ) : 'Save Changes'}
         </button>
       </div>
 
@@ -106,7 +112,7 @@ export default function Settings() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <span className="w-5 h-5 flex items-center justify-center">📊</span>
+              <BarChart3 className="w-5 h-5" />
               <span className="font-medium">Calculation</span>
             </button>
             <button
@@ -117,7 +123,9 @@ export default function Settings() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <span className="w-5 h-5 flex items-center justify-center">🗄️</span>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+              </svg>
               <span className="font-medium">Database</span>
             </button>
             <button
@@ -128,7 +136,9 @@ export default function Settings() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <span className="w-5 h-5 flex items-center justify-center">🔔</span>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
               <span className="font-medium">Notifications</span>
             </button>
             <button
@@ -139,7 +149,9 @@ export default function Settings() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <span className="w-5 h-5 flex items-center justify-center">🛡️</span>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
               <span className="font-medium">Security</span>
             </button>
           </nav>
@@ -285,7 +297,7 @@ export default function Settings() {
               </h2>
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-                  <span className="text-green-600">✓</span>
+                  <Check className="w-5 h-5 text-green-600" />
                   <div>
                     <p className="font-medium text-green-800">Connected to Supabase</p>
                     <p className="text-sm text-green-600">Database is online and accessible</p>
@@ -401,7 +413,7 @@ export default function Settings() {
                 <div className="pt-4 border-t border-gray-200">
                   <h4 className="font-medium text-gray-900 mb-3">Two-Factor Authentication</h4>
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-                    <span className="text-amber-600 flex-shrink-0 mt-0.5">⚠️</span>
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-amber-800">2FA Not Enabled</p>
                       <p className="text-sm text-amber-700 mt-1">

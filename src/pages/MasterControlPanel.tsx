@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { AlertTriangle, BarChart3, Check, X, Calendar, TrendingUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { calculateAdjustedRate, formatCurrency, formatDate, formatPercentage, roundToDecimal } from '../lib/utils'
+import { calculateAdjustedRate, formatCurrency, formatDate, formatPercentage, getFirstWednesdayOfMonth, isFirstWednesdayOfMonth, getCurrentMonthAdjustmentDate, roundToDecimal } from '../lib/utils'
 import type { ClientRoute, DieselPrice, RateCalculation, Route } from '../types'
+
+// Type for monthly adjustment record
+interface MonthlyAdjustment {
+  id: string
+  adjustment_month: string
+  diesel_percentage_change: number
+  applied_at: string
+  total_routes_adjusted: number
+  notes: string | null
+}
 
 const defaultSettings: Record<string, string> = {
   base_diesel_price: '21.50',
@@ -26,11 +37,26 @@ export default function MasterControlPanel() {
   const [newPriceNotes, setNewPriceNotes] = useState('')
   const [applyingRates, setApplyingRates] = useState(false)
   const [selectedCalculations, setSelectedCalculations] = useState<string[]>([])
+  
+  // Monthly adjustment state
+  const [showMonthlyAdjustment, setShowMonthlyAdjustment] = useState(false)
+  const [monthlyAdjustmentPercentage, setMonthlyAdjustmentPercentage] = useState('')
+  const [monthlyAdjustmentNotes, setMonthlyAdjustmentNotes] = useState('')
+  const [applyingMonthlyAdjustment, setApplyingMonthlyAdjustment] = useState(false)
+  const [currentMonthAdjusted, setCurrentMonthAdjusted] = useState(false)
+  const [lastAdjustment, setLastAdjustment] = useState<MonthlyAdjustment | null>(null)
+  const [isFirstWednesday, setIsFirstWednesday] = useState(false)
+  const [allClientRoutes, setAllClientRoutes] = useState<(ClientRoute & { client?: { company_name: string; client_code: string }, route?: Route })[]>([])
 
   useEffect(() => {
     loadData()
+    checkFirstWednesday()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function checkFirstWednesday() {
+    setIsFirstWednesday(isFirstWednesdayOfMonth())
+  }
 
   async function loadData() {
     setLoading(true)
@@ -61,6 +87,30 @@ export default function MasterControlPanel() {
         setSettings(settingsMap)
       }
 
+      // Check if current month adjustment has been done
+      const currentMonthDate = getCurrentMonthAdjustmentDate()
+      const { data: adjustmentData } = await supabase
+        .from('monthly_adjustments')
+        .select('*')
+        .eq('adjustment_month', currentMonthDate)
+        .single()
+
+      if (adjustmentData) {
+        setCurrentMonthAdjusted(true)
+        setLastAdjustment(adjustmentData)
+      } else {
+        setCurrentMonthAdjusted(false)
+        // Get last adjustment for reference
+        const { data: lastAdj } = await supabase
+          .from('monthly_adjustments')
+          .select('*')
+          .order('adjustment_month', { ascending: false })
+          .limit(1)
+          .single()
+        
+        setLastAdjustment(lastAdj || null)
+      }
+
       // Load client routes for rate calculations
       await loadClientRoutes(prices || [])
     } catch (err) {
@@ -85,6 +135,7 @@ export default function MasterControlPanel() {
       if (routesError) throw routesError
 
       if (clientRoutes && clientRoutes.length > 0) {
+        setAllClientRoutes(clientRoutes)
         calculateProposedRates(clientRoutes, prices)
       }
     } catch (err) {
@@ -229,6 +280,99 @@ export default function MasterControlPanel() {
     }
   }
 
+  // Handle monthly diesel adjustment - applies percentage change to ALL active client routes
+  async function handleApplyMonthlyAdjustment(e: React.FormEvent) {
+    e.preventDefault()
+    
+    const percentage = parseFloat(monthlyAdjustmentPercentage)
+    if (isNaN(percentage)) {
+      setError('Please enter a valid percentage')
+      return
+    }
+
+    setApplyingMonthlyAdjustment(true)
+    setError(null)
+
+    try {
+      const currentMonthDate = getCurrentMonthAdjustmentDate()
+      const currentPrice = dieselPrices[dieselPrices.length - 1]
+      let successCount = 0
+
+      // Apply adjustment to all active client routes
+      for (const clientRoute of allClientRoutes) {
+        const previousRate = clientRoute.current_rate
+        // Apply percentage: positive increases rates, negative decreases
+        const newRate = roundToDecimal(previousRate * (1 + percentage / 100), 2)
+
+        // Record in tariff_history with the previous month's info
+        const { error: historyError } = await supabase.from('tariff_history').insert({
+          client_route_id: clientRoute.id,
+          client_id: clientRoute.client_id,
+          route_id: clientRoute.route_id,
+          period_month: currentMonthDate,
+          previous_rate: previousRate,
+          new_rate: newRate,
+          currency: clientRoute.currency || 'ZAR',
+          diesel_price_at_change: currentPrice?.price_per_liter || null,
+          diesel_percentage_change: percentage,
+          adjustment_percentage: percentage,
+          adjustment_reason: `Monthly diesel adjustment: ${percentage >= 0 ? '+' : ''}${percentage}%`,
+        })
+
+        if (historyError) {
+          console.error('Error creating tariff history:', historyError)
+          continue
+        }
+
+        // Update client_routes with new rate
+        const { error: updateError } = await supabase
+          .from('client_routes')
+          .update({ 
+            current_rate: newRate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', clientRoute.id)
+
+        if (updateError) {
+          console.error('Error updating client route:', updateError)
+          continue
+        }
+
+        successCount++
+      }
+
+      // Record the monthly adjustment
+      await supabase.from('monthly_adjustments').insert({
+        adjustment_month: currentMonthDate,
+        diesel_percentage_change: percentage,
+        total_routes_adjusted: successCount,
+        notes: monthlyAdjustmentNotes || null,
+      })
+
+      // Reset form and refresh data
+      setShowMonthlyAdjustment(false)
+      setMonthlyAdjustmentPercentage('')
+      setMonthlyAdjustmentNotes('')
+      await loadData()
+    } catch (error) {
+      console.error('Error applying monthly adjustment:', error)
+      setError('Failed to apply monthly adjustment')
+    } finally {
+      setApplyingMonthlyAdjustment(false)
+    }
+  }
+
+  // Get the next first Wednesday
+  const today = new Date()
+  const nextFirstWednesday = getFirstWednesdayOfMonth(today.getFullYear(), today.getMonth())
+  const isNextMonth = nextFirstWednesday < today
+  const displayFirstWednesday = isNextMonth 
+    ? getFirstWednesdayOfMonth(
+        today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear(), 
+        today.getMonth() === 11 ? 0 : today.getMonth() + 1
+      )
+    : nextFirstWednesday
+
   const currentPrice = dieselPrices[dieselPrices.length - 1]
   const basePrice = parseFloat(settings.base_diesel_price)
   const totalDieselChange = currentPrice 
@@ -271,8 +415,41 @@ export default function MasterControlPanel() {
       {/* Error Banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <span className="text-red-600 text-xl">⚠️</span>
+          <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
           <p className="text-red-700">{error}</p>
+          <button onClick={() => setError(null)} className="ml-auto p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* First Wednesday Notification Banner */}
+      {isFirstWednesday && !currentMonthAdjusted && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+          <Calendar className="w-6 h-6 text-amber-600" />
+          <div className="flex-1">
+            <p className="font-semibold text-amber-800">It's the First Wednesday of the Month!</p>
+            <p className="text-amber-700 text-sm">Time to apply the monthly diesel price adjustment to all client rates.</p>
+          </div>
+          <button
+            onClick={() => setShowMonthlyAdjustment(true)}
+            className="btn-primary"
+          >
+            Apply Monthly Adjustment
+          </button>
+        </div>
+      )}
+
+      {/* Already adjusted banner */}
+      {currentMonthAdjusted && lastAdjustment && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+          <span className="text-green-600 text-2xl">✅</span>
+          <div className="flex-1">
+            <p className="font-semibold text-green-800">Monthly Adjustment Completed</p>
+            <p className="text-green-700 text-sm">
+              Adjusted {lastAdjustment.total_routes_adjusted} routes by {formatPercentage(lastAdjustment.diesel_percentage_change)} on {formatDate(lastAdjustment.applied_at, 'dd MMM yyyy HH:mm')}
+            </p>
+          </div>
         </div>
       )}
 
@@ -281,13 +458,29 @@ export default function MasterControlPanel() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Master Control Panel</h1>
           <p className="text-gray-500 mt-1">Manage diesel prices and tariff calculations</p>
+          {!currentMonthAdjusted && (
+            <p className="text-sm text-amber-600 mt-1">
+              Next adjustment due: {formatDate(displayFirstWednesday.toISOString(), 'EEEE, dd MMMM yyyy')}
+            </p>
+          )}
         </div>
-        <button
-          onClick={() => setShowAddPrice(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          + Add New Price
-        </button>
+        <div className="flex gap-2">
+          {!currentMonthAdjusted && (
+            <button
+              onClick={() => setShowMonthlyAdjustment(true)}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Monthly Adjustment
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddPrice(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            + Add New Price
+          </button>
+        </div>
       </div>
 
       {/* Current Status Cards */}
@@ -503,11 +696,11 @@ export default function MasterControlPanel() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="table-container">
+          <table className="w-full" style={{ minWidth: '900px' }}>
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="table-header">
+                <th className="table-header" style={{ minWidth: '40px' }}>
                   <input
                     type="checkbox"
                     checked={selectedCalculations.length === rateCalculations.length}
@@ -515,13 +708,13 @@ export default function MasterControlPanel() {
                     className="rounded border-gray-300"
                   />
                 </th>
-                <th className="table-header">Client</th>
-                <th className="table-header">Route</th>
-                <th className="table-header text-right">Base Rate</th>
-                <th className="table-header text-right">Current Rate</th>
-                <th className="table-header text-right">Proposed Rate</th>
-                <th className="table-header text-right">Adjustment</th>
-                <th className="table-header text-center">Status</th>
+                <th className="table-header" style={{ minWidth: '150px' }}>Client</th>
+                <th className="table-header" style={{ minWidth: '130px' }}>Route</th>
+                <th className="table-header text-right" style={{ minWidth: '100px' }}>Base Rate</th>
+                <th className="table-header text-right" style={{ minWidth: '100px' }}>Current Rate</th>
+                <th className="table-header text-right" style={{ minWidth: '110px' }}>Proposed Rate</th>
+                <th className="table-header text-right" style={{ minWidth: '90px' }}>Adjustment</th>
+                <th className="table-header text-center" style={{ minWidth: '80px' }}>Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -557,11 +750,13 @@ export default function MasterControlPanel() {
                   <td className="table-cell text-center">
                     {calc.adjustmentPercentage > parseFloat(settings.max_monthly_increase) ? (
                       <span className="badge badge-warning flex items-center gap-1 justify-center">
-                        ⚠️ Exceeds Max
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        Exceeds Max
                       </span>
                     ) : (
                       <span className="badge badge-success flex items-center gap-1 justify-center">
-                        ✓ Ready
+                        <Check className="w-3.5 h-3.5" />
+                        Ready
                       </span>
                     )}
                   </td>
@@ -579,17 +774,17 @@ export default function MasterControlPanel() {
       </div>
 
       {/* Price History Table */}
-      <div className="card">
+      <div className="card overflow-hidden">
         <h2 className="card-header">Recent Price History</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="table-container">
+          <table className="w-full" style={{ minWidth: '600px' }}>
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="table-header">Date</th>
-                <th className="table-header text-right">Price/L</th>
-                <th className="table-header text-right">Previous</th>
-                <th className="table-header text-right">Change</th>
-                <th className="table-header">Notes</th>
+                <th className="table-header" style={{ minWidth: '130px' }}>Date</th>
+                <th className="table-header text-right" style={{ minWidth: '90px' }}>Price/L</th>
+                <th className="table-header text-right" style={{ minWidth: '90px' }}>Previous</th>
+                <th className="table-header text-right" style={{ minWidth: '80px' }}>Change</th>
+                <th className="table-header" style={{ minWidth: '120px' }}>Notes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -597,7 +792,7 @@ export default function MasterControlPanel() {
                 <tr key={price.id} className="hover:bg-gray-50">
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-400">📅</span>
+                      <Calendar className="w-4 h-4 text-gray-400" />
                       {formatDate(price.price_date, 'dd MMM yyyy')}
                     </div>
                   </td>
@@ -683,6 +878,139 @@ export default function MasterControlPanel() {
                   className="btn-primary flex-1 flex items-center justify-center gap-2"
                 >
                   {saving ? 'Saving...' : 'Save Price'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Monthly Adjustment Modal */}
+      {showMonthlyAdjustment && (
+        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg animate-fade-in">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Monthly Diesel Rate Adjustment</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Apply percentage change to all {allClientRoutes.length} active client routes
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <form onSubmit={handleApplyMonthlyAdjustment} className="p-6 space-y-4">
+              {/* Summary info */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Current Month:</span>
+                  <span className="font-medium">{formatDate(getCurrentMonthAdjustmentDate(), 'MMMM yyyy')}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Routes to Adjust:</span>
+                  <span className="font-medium">{allClientRoutes.length} active routes</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Current Diesel Price:</span>
+                  <span className="font-medium">{formatCurrency(currentPrice?.price_per_liter || 0)}/L</span>
+                </div>
+                {lastAdjustment && !currentMonthAdjusted && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Last Adjustment:</span>
+                    <span className="font-medium">
+                      {formatPercentage(lastAdjustment.diesel_percentage_change)} in {formatDate(lastAdjustment.adjustment_month, 'MMM yyyy')}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Diesel Price Change (%) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={monthlyAdjustmentPercentage}
+                    onChange={(e) => setMonthlyAdjustmentPercentage(e.target.value)}
+                    className="input-field pr-8"
+                    placeholder="e.g., 5.5 or -3.2"
+                    required
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter positive value for increase, negative for decrease
+                </p>
+              </div>
+
+              {monthlyAdjustmentPercentage && !isNaN(parseFloat(monthlyAdjustmentPercentage)) && (
+                <div className={`rounded-lg p-4 ${parseFloat(monthlyAdjustmentPercentage) >= 0 ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
+                  <p className={`text-sm font-medium ${parseFloat(monthlyAdjustmentPercentage) >= 0 ? 'text-red-800' : 'text-green-800'}`}>
+                    {parseFloat(monthlyAdjustmentPercentage) >= 0 ? '📈 Rate Increase' : '📉 Rate Decrease'}
+                  </p>
+                  <p className={`text-sm mt-1 ${parseFloat(monthlyAdjustmentPercentage) >= 0 ? 'text-red-700' : 'text-green-700'}`}>
+                    All rates will be {parseFloat(monthlyAdjustmentPercentage) >= 0 ? 'increased' : 'decreased'} by {Math.abs(parseFloat(monthlyAdjustmentPercentage)).toFixed(2)}%
+                  </p>
+                  <div className="mt-2 text-xs">
+                    <span className={parseFloat(monthlyAdjustmentPercentage) >= 0 ? 'text-red-600' : 'text-green-600'}>
+                      Example: R1,000 → R{(1000 * (1 + parseFloat(monthlyAdjustmentPercentage) / 100)).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={monthlyAdjustmentNotes}
+                  onChange={(e) => setMonthlyAdjustmentNotes(e.target.value)}
+                  className="input-field"
+                  rows={2}
+                  placeholder="Reason for this adjustment..."
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-amber-800">
+                  <strong>Warning:</strong> This action will update rates for ALL active client routes and save the previous rates to history. This cannot be undone.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMonthlyAdjustment(false)
+                    setMonthlyAdjustmentPercentage('')
+                    setMonthlyAdjustmentNotes('')
+                  }}
+                  className="btn-secondary flex-1"
+                  disabled={applyingMonthlyAdjustment}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={applyingMonthlyAdjustment || !monthlyAdjustmentPercentage}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2"
+                >
+                  {applyingMonthlyAdjustment ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Applying...
+                    </>
+                  ) : (
+                    'Apply Adjustment'
+                  )}
                 </button>
               </div>
             </form>

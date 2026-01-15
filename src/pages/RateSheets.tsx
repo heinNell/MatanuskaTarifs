@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { AlertTriangle, FileText, Upload, X, Eye, Download, Palette, FileEdit, Calendar } from 'lucide-react'
 import
   {
     downloadPdf,
@@ -447,20 +448,21 @@ export default function RateSheets() {
           onClick={openBrandingModal}
           className="btn-secondary flex items-center gap-2"
         >
-          🎨 Branding Settings
+          <Palette className="w-4 h-4" />
+          Branding Settings
         </button>
       </div>
 
       {/* Error Banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <span className="text-red-500 flex-shrink-0">⚠️</span>
+          <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
           <p className="text-red-700">{error}</p>
           <button
             onClick={() => setError(null)}
             className="ml-auto p-1 hover:bg-red-100 rounded"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -477,7 +479,8 @@ export default function RateSheets() {
             }`}
           >
             <div className="flex items-center gap-2">
-              📄 Generate Rate Sheet
+              <FileText className="w-4 h-4" />
+              Generate Rate Sheet
             </div>
           </button>
           <button
@@ -489,7 +492,10 @@ export default function RateSheets() {
             }`}
           >
             <div className="flex items-center gap-2">
-              🎨 Branding Preview
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+              </svg>
+              Branding Preview
             </div>
           </button>
         </nav>
@@ -537,8 +543,9 @@ export default function RateSheets() {
 
             {/* Date & Reference */}
             <div className="card">
-              <h3 className="card-header">
-                📅 Date & Reference
+              <h3 className="card-header flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Date & Reference
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -600,16 +607,16 @@ export default function RateSheets() {
 
             {/* Routes Preview */}
             {selectedClient && clientRoutes.length > 0 && (
-              <div className="card">
+              <div className="card overflow-hidden">
                 <h3 className="card-header">Routes & Rates</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div className="table-container">
+                  <table className="w-full" style={{ minWidth: '500px' }}>
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="table-header">Route</th>
-                        <th className="table-header">Origin → Destination</th>
-                        <th className="table-header text-right">Current Rate</th>
-                        <th className="table-header">Type</th>
+                        <th className="table-header" style={{ minWidth: '90px' }}>Route</th>
+                        <th className="table-header" style={{ minWidth: '180px' }}>Origin → Destination</th>
+                        <th className="table-header text-right" style={{ minWidth: '110px' }}>Current Rate</th>
+                        <th className="table-header" style={{ minWidth: '80px' }}>Type</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -641,8 +648,9 @@ export default function RateSheets() {
 
             {/* Custom Notes */}
             <div className="card">
-              <h3 className="card-header">
-                📝 Custom Notes
+              <h3 className="card-header flex items-center gap-2">
+                <FileEdit className="w-4 h-4" />
+                Custom Notes
               </h3>
               <textarea
                 value={customNotes}
@@ -705,7 +713,7 @@ export default function RateSheets() {
             <div className="card bg-gradient-to-br from-primary-50 to-blue-50 border-primary-200">
               <div className="text-center">
                 <div className="w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl text-primary-600">📄</span>
+                  <FileText className="w-8 h-8 text-primary-600" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1">Rate Sheet Preview</h3>
                 <p className="text-sm text-gray-600 mb-4">
@@ -718,7 +726,8 @@ export default function RateSheets() {
                     disabled={!selectedClient || generating}
                     className="btn-secondary w-full flex items-center justify-center gap-2"
                   >
-                    👁️ Preview PDF
+                    <Eye className="w-4 h-4" />
+                    Preview PDF
                   </button>
                   <button
                     onClick={() => handleGeneratePdf(false)}
@@ -731,7 +740,10 @@ export default function RateSheets() {
                         Generating...
                       </>
                     ) : (
-                      '⬇️ Download PDF'
+                      <>
+                        <Download className="w-4 h-4" />
+                        Download PDF
+                      </>
                     )}
                   </button>
                 </div>
@@ -832,7 +844,10 @@ export default function RateSheets() {
                             Uploading...
                           </>
                         ) : (
-                          branding.logoBase64 ? 'Change Logo' : '⬆️ Upload Logo'
+                          <>
+                            <Upload className="w-4 h-4" />
+                            {branding.logoBase64 ? 'Change Logo' : 'Upload Logo'}
+                          </>
                         )}
                       </span>
                     </label>
@@ -1112,7 +1127,8 @@ export default function RateSheets() {
                       className="hidden"
                     />
                     <span className="btn-secondary text-sm inline-flex items-center gap-2">
-                      {tempBranding.logoBase64 ? 'Change' : '⬆️ Upload'}
+                      <Upload className="w-3.5 h-3.5" />
+                      {tempBranding.logoBase64 ? 'Change' : 'Upload'}
                     </span>
                   </label>
                 </div>

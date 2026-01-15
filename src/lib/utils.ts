@@ -15,15 +15,16 @@ export function formatDate(dateString: string | null | undefined, formatStr: str
 }
 
 /**
- * Format a number as currency (ZAR)
+ * Format a number as currency (ZAR or USD)
  */
-export function formatCurrency(amount: number | null | undefined, showSymbol: boolean = true): string {
+export function formatCurrency(amount: number | null | undefined, currency: 'ZAR' | 'USD' = 'ZAR', showSymbol: boolean = true): string {
   if (amount === null || amount === undefined) return '-'
-  const formatted = new Intl.NumberFormat('en-ZA', {
+  const formatted = new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'en-ZA', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
-  return showSymbol ? `R ${formatted}` : formatted
+  if (!showSymbol) return formatted
+  return currency === 'USD' ? `$ ${formatted}` : `R ${formatted}`
 }
 
 /**
@@ -157,4 +158,34 @@ export function getDaysUntil(dateString: string): number {
   const today = new Date()
   const diffTime = date.getTime() - today.getTime()
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
+/**
+ * Get the first Wednesday of a given month
+ */
+export function getFirstWednesdayOfMonth(year: number, month: number): Date {
+  const firstDay = new Date(year, month, 1)
+  const dayOfWeek = firstDay.getDay()
+  // Wednesday is day 3 (0 = Sunday)
+  const daysUntilWednesday = (3 - dayOfWeek + 7) % 7
+  return new Date(year, month, 1 + daysUntilWednesday)
+}
+
+/**
+ * Check if today is the first Wednesday of the current month
+ */
+export function isFirstWednesdayOfMonth(): boolean {
+  const today = new Date()
+  const firstWednesday = getFirstWednesdayOfMonth(today.getFullYear(), today.getMonth())
+  return today.getDate() === firstWednesday.getDate() &&
+         today.getMonth() === firstWednesday.getMonth() &&
+         today.getFullYear() === firstWednesday.getFullYear()
+}
+
+/**
+ * Check if the monthly rate adjustment has been done for the current month
+ */
+export function getCurrentMonthAdjustmentDate(): string {
+  const today = new Date()
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`
 }

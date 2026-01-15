@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Fuel, AlertTriangle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatCurrency, formatDate, formatPercentage } from '../lib/utils'
 import type { DieselPrice, TariffHistory } from '../types'
@@ -149,77 +150,88 @@ export default function Dashboard() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Overview of your tariff management system</p>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Dashboard</h1>
+        <p className="text-gray-500 mt-2">Overview of your tariff management system</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Current Diesel Price */}
-        <div className="stat-card">
+        <div className="stat-card stat-card-amber">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Current Diesel Price</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-gray-500">Current Diesel Price</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">
                 {formatCurrency(currentPrice?.price_per_liter || stats.currentDieselPrice)}
               </p>
-              <div className={`flex items-center gap-1 mt-2 ${priceChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                <span className="text-sm font-medium">
+              <div className={`flex items-center gap-1.5 mt-3 ${priceChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${priceChange >= 0 ? 'bg-red-100' : 'bg-green-100'}`}>
                   {priceChange >= 0 ? '↑' : '↓'} {formatPercentage(priceChange)}
                 </span>
-                <span className="text-gray-500 text-sm">vs last month</span>
+                <span className="text-gray-400 text-xs">vs last month</span>
               </div>
             </div>
-            <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-              <span className="text-amber-600 font-bold text-lg">D</span>
+            <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <Fuel className="w-7 h-7 text-white" />
             </div>
           </div>
         </div>
 
         {/* Active Clients */}
-        <div className="stat-card">
+        <div className="stat-card stat-card-blue">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Active Clients</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.activeClients}</p>
-              <p className="text-sm text-gray-500 mt-2">
-                {stats.totalClients} total clients
+              <p className="text-sm font-medium text-gray-500">Active Clients</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.activeClients}</p>
+              <p className="text-sm text-gray-400 mt-3">
+                of {stats.totalClients} total clients
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-blue-600 font-bold text-lg">C</span>
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+              </svg>
             </div>
           </div>
         </div>
 
         {/* Active Routes */}
-        <div className="stat-card">
+        <div className="stat-card stat-card-green">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Active Routes</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalRoutes}</p>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm font-medium text-gray-500">Active Routes</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalRoutes}</p>
+              <p className="text-sm text-gray-400 mt-3">
                 Across all clients
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <span className="text-green-600 font-bold text-lg">R</span>
+            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/30">
+              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+              </svg>
             </div>
           </div>
         </div>
 
         {/* Documents Expiring */}
-        <div className="stat-card">
+        <div className="stat-card stat-card-purple">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Documents Expiring</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.documentsExpiring}</p>
-              <p className="text-sm text-amber-600 mt-2">
-                {stats.documentsExpiring > 0 ? 'Within 30 days' : 'None expiring soon'}
+              <p className="text-sm font-medium text-gray-500">Documents Expiring</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.documentsExpiring}</p>
+              <p className={`text-sm mt-3 ${stats.documentsExpiring > 0 ? 'text-amber-600 font-medium' : 'text-gray-400'}`}>
+                {stats.documentsExpiring > 0 ? (
+                  <span className="flex items-center gap-1">
+                    <AlertTriangle className="w-4 h-4" />
+                    Within 30 days
+                  </span>
+                ) : 'None expiring soon'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-              <span className="text-amber-600 font-bold text-lg">!</span>
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
             </div>
           </div>
         </div>
@@ -296,54 +308,74 @@ export default function Dashboard() {
           <div className="space-y-3">
             <Link
               to="/master-control"
-              className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl hover:from-primary-50 hover:to-primary-100/50 transition-all duration-200 group border border-gray-100 hover:border-primary-200"
             >
-              <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                <span className="text-primary-600 font-bold">D</span>
+              <div className="w-12 h-12 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-primary-500/20 transition-shadow">
+                <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Update Diesel Price</p>
+                <p className="font-semibold text-gray-900 group-hover:text-primary-700 transition-colors">Update Diesel Price</p>
                 <p className="text-sm text-gray-500">Add new monthly price</p>
               </div>
+              <svg className="w-5 h-5 text-gray-400 ml-auto group-hover:text-primary-500 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
 
             <Link
               to="/clients"
-              className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl hover:from-green-50 hover:to-green-100/50 transition-all duration-200 group border border-gray-100 hover:border-green-200"
             >
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 font-bold">C</span>
+              <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-green-500/20 transition-shadow">
+                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Manage Clients</p>
+                <p className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors">Manage Clients</p>
                 <p className="text-sm text-gray-500">View and edit client profiles</p>
               </div>
+              <svg className="w-5 h-5 text-gray-400 ml-auto group-hover:text-green-500 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
 
             <Link
               to="/tariff-history"
-              className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl hover:from-purple-50 hover:to-purple-100/50 transition-all duration-200 group border border-gray-100 hover:border-purple-200"
             >
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-purple-600 font-bold">H</span>
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/20 transition-shadow">
+                <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">View History</p>
+                <p className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">View History</p>
                 <p className="text-sm text-gray-500">Tariff change history</p>
               </div>
+              <svg className="w-5 h-5 text-gray-400 ml-auto group-hover:text-purple-500 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
 
             <Link
-              to="/documents"
-              className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              to="/rate-sheets"
+              className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl hover:from-amber-50 hover:to-amber-100/50 transition-all duration-200 group border border-gray-100 hover:border-amber-200"
             >
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                <span className="text-amber-600 font-bold">F</span>
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-amber-500/20 transition-shadow">
+                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Documents</p>
-                <p className="text-sm text-gray-500">{stats.documentsExpiring > 0 ? `${stats.documentsExpiring} expiring soon` : 'Manage files'}</p>
+                <p className="font-semibold text-gray-900 group-hover:text-amber-700 transition-colors">Rate Sheets</p>
+                <p className="text-sm text-gray-500">Generate and export rate sheets</p>
               </div>
+              <svg className="w-5 h-5 text-gray-400 ml-auto group-hover:text-amber-500 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           </div>
         </div>
@@ -365,16 +397,16 @@ export default function Dashboard() {
         </div>
 
         {recentHistory.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="table-container">
+            <table className="w-full" style={{ minWidth: '700px' }}>
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="table-header">Client</th>
-                  <th className="table-header">Route</th>
-                  <th className="table-header">Period</th>
-                  <th className="table-header text-right">Previous Rate</th>
-                  <th className="table-header text-right">New Rate</th>
-                  <th className="table-header text-right">Change</th>
+                  <th className="table-header" style={{ minWidth: '140px' }}>Client</th>
+                  <th className="table-header" style={{ minWidth: '130px' }}>Route</th>
+                  <th className="table-header" style={{ minWidth: '90px' }}>Period</th>
+                  <th className="table-header text-right" style={{ minWidth: '100px' }}>Prev Rate</th>
+                  <th className="table-header text-right" style={{ minWidth: '100px' }}>New Rate</th>
+                  <th className="table-header text-right" style={{ minWidth: '80px' }}>Change</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
