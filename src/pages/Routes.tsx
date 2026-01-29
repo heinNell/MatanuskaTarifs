@@ -1,6 +1,6 @@
+import { AlertTriangle, Pencil, Route as RouteIcon, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
-import { Pencil, Trash2, AlertTriangle, Route as RouteIcon, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatNumber } from '../lib/utils'
 import type { Route, RouteFormData } from '../types'
@@ -79,7 +79,8 @@ export default function RoutesPage() {
       r =>
         r.route_code.toLowerCase().includes(term) ||
         r.origin.toLowerCase().includes(term) ||
-        r.destination.toLowerCase().includes(term)
+        r.destination.toLowerCase().includes(term) ||
+        (r.route_description || '').toLowerCase().includes(term)
     )
     setFilteredRoutes(filtered)
   }
@@ -177,7 +178,7 @@ export default function RoutesPage() {
         destination: 'Cape Town',
         distance_km: 1400,
         estimated_hours: 16,
-        route_description: 'Main route via N1',
+        route_description: 'Via N1 • Night delivery window',
         is_active: 'Yes'
       },
       {
@@ -186,7 +187,7 @@ export default function RoutesPage() {
         destination: 'Johannesburg',
         distance_km: 580,
         estimated_hours: 6.5,
-        route_description: 'Coastal to inland route',
+        route_description: 'Coastal to inland • Toll roads preferred',
         is_active: 'Yes'
       }
     ]
@@ -217,12 +218,13 @@ export default function RoutesPage() {
       { Instructions: '• destination: End location (required)' },
       { Instructions: '• distance_km: Distance in kilometers (optional)' },
       { Instructions: '• estimated_hours: Estimated travel time in hours (optional)' },
-      { Instructions: '• route_description: Additional details about the route (optional)' },
+      { Instructions: '• route_description: Unique comment to distinguish similar routes (optional)' },
       { Instructions: '• is_active: Yes or No (defaults to Yes if empty)' },
       { Instructions: '' },
       { Instructions: 'Notes:' },
       { Instructions: '• Delete the sample rows before uploading your data' },
       { Instructions: '• Route codes must be unique' },
+      { Instructions: '• Use the comment field to differentiate routes with the same origin/destination' },
       { Instructions: '• Do not modify the column headers' }
     ]
     const wsInstructions = XLSX.utils.json_to_sheet(instructionsData)
@@ -497,7 +499,7 @@ export default function RoutesPage() {
                 <th className="table-header" style={{ minWidth: '120px' }}>Destination</th>
                 <th className="table-header text-right" style={{ minWidth: '90px' }}>Distance</th>
                 <th className="table-header text-right" style={{ minWidth: '80px' }}>Hours</th>
-                <th className="table-header" style={{ minWidth: '150px' }}>Description</th>
+                <th className="table-header" style={{ minWidth: '150px' }}>Comments</th>
                 <th className="table-header" style={{ minWidth: '80px' }}>Status</th>
                 <th className="table-header" style={{ minWidth: '80px' }}></th>
               </tr>
@@ -659,14 +661,14 @@ export default function RoutesPage() {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
+                    Comments
                   </label>
                   <textarea
                     value={formData.route_description}
                     onChange={(e) => setFormData({ ...formData, route_description: e.target.value })}
                     className="input-field"
                     rows={2}
-                    placeholder="Route description..."
+                    placeholder="Unique comment to distinguish similar routes"
                   />
                 </div>
                 <div className="col-span-2">

@@ -239,49 +239,58 @@ export function generateClientRateSheet(
   // ============ RATES TABLE ============
   yPos += 10
   
+  // Helper to truncate text for table cells
+  const truncateText = (text: string, maxLength: number): string => {
+    if (!text) return '-'
+    return text.length > maxLength ? text.substring(0, maxLength - 2) + '...' : text
+  }
+  
   const tableData = data.routes.map((cr) => [
     cr.route?.route_code || '-',
-    cr.route?.origin || '-',
-    cr.route?.destination || '-',
-    `${cr.route?.distance_km || 0} km`,
+    truncateText(cr.route?.origin || '', 18),
+    truncateText(cr.route?.destination || '', 18),
+    truncateText(cr.route?.route_description || '', 28),
+    `${cr.route?.distance_km || 0}`,
     formatCurrency(cr.current_rate),
   ])
 
   autoTable(doc, {
     startY: yPos,
-    head: [['Route', 'Origin', 'Destination', 'Distance', 'Rate']],
+    head: [['Route', 'Origin', 'Destination', 'Comments', 'Km', 'Rate']],
     body: tableData,
     theme: 'striped',
     headStyles: {
       fillColor: [primaryRgb.r, primaryRgb.g, primaryRgb.b],
       textColor: [255, 255, 255],
-      fontSize: 9,
+      fontSize: 8,
       fontStyle: 'bold',
-      cellPadding: 4,
+      cellPadding: 3,
       halign: 'center',
       valign: 'middle',
     },
     bodyStyles: {
-      fontSize: 9,
+      fontSize: 7.5,
       textColor: [50, 50, 50],
-      cellPadding: 4,
+      cellPadding: 2.5,
       valign: 'middle',
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252],
     },
     columnStyles: {
-      0: { cellWidth: 'auto', fontStyle: 'bold', halign: 'left' },
-      1: { cellWidth: 'auto', halign: 'left' },
-      2: { cellWidth: 'auto', halign: 'left' },
-      3: { cellWidth: 30, halign: 'center' },
-      4: { cellWidth: 35, halign: 'right', fontStyle: 'bold' },
+      0: { cellWidth: 22, fontStyle: 'bold', halign: 'left' },   // Route code
+      1: { cellWidth: 32, halign: 'left' },                       // Origin
+      2: { cellWidth: 32, halign: 'left' },                       // Destination
+      3: { cellWidth: 48, halign: 'left', fontStyle: 'italic', textColor: [100, 100, 100] }, // Comments
+      4: { cellWidth: 18, halign: 'center' },                     // Distance (km)
+      5: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },   // Rate
     },
     margin: { left: margin, right: margin },
     tableWidth: contentWidth,
     styles: {
       lineColor: [220, 220, 220],
       lineWidth: 0.1,
+      overflow: 'ellipsize',
     },
   })
 

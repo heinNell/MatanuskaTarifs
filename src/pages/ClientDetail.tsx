@@ -1,9 +1,24 @@
-import { useEffect, useState } from 'react'
+import
+  {
+    AlertTriangle,
+    Calendar,
+    Check,
+    Download,
+    FileText,
+    History,
+    MapPin,
+    Pencil,
+    Phone,
+    Plus,
+    Route as RouteIcon,
+    Settings,
+    Trash2,
+    Upload,
+    X
+  } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { 
-  Pencil, Trash2, Upload, MapPin, Phone, FileText, Route as RouteIcon, 
-  History, Settings, X, Check, AlertTriangle, Plus, Calendar
-} from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { supabase } from '../lib/supabase'
 import { formatCurrency, formatDate, getDaysUntil } from '../lib/utils'
 import type { Client, ClientRoute, Document, Route, TariffHistory } from '../types'
@@ -91,6 +106,10 @@ export default function ClientDetail() {
   const [togglingRouteId, setTogglingRouteId] = useState<string | null>(null)
   const [showCurrencyModal, setShowCurrencyModal] = useState(false)
   const [selectedCurrency, setSelectedCurrency] = useState<'ZAR' | 'USD'>('ZAR')
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false)
+  const [bulkUploading, setBulkUploading] = useState(false)
+  const [bulkUploadResult, setBulkUploadResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (id) loadClientData()
@@ -476,6 +495,344 @@ export default function ClientDetail() {
     }
   }
 
+  // Download Excel template for bulk route upload
+  function downloadRouteTemplate() {
+    if (!client) return
+
+    const templateData = [
+      {
+        route_code: 'JHB-CPT',
+        origin: 'Johannesburg',
+        destination: 'Cape Town',
+        comments: 'Via N1 • Night delivery window',
+        distance_km: 1400,
+        rate: 15000,
+        rate_type: 'per_load',
+        additional_charges: 500,
+        include_vat: 'Yes',
+        effective_date: new Date().toISOString().split('T')[0],
+        notes: 'Standard route pricing'
+      },
+      {
+        route_code: 'DBN-JHB',
+        origin: 'Durban',
+        destination: 'Johannesburg',
+        comments: 'Coastal to inland • Toll roads preferred',
+        distance_km: 580,
+        rate: 8500,
+        rate_type: 'per_load',
+        additional_charges: 0,
+        include_vat: 'No',
+        effective_date: new Date().toISOString().split('T')[0],
+        notes: ''
+      }
+    ]
+
+    const ws = XLSX.utils.json_to_sheet(templateData)
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 12 },  // route_code
+      { wch: 18 },  // origin
+      { wch: 18 },  // destination
+      { wch: 35 },  // comments
+      { wch: 12 },  // distance_km
+      { wch: 12 },  // rate
+      { wch: 12 },  // rate_type
+      { wch: 18 },  // additional_charges
+      { wch: 12 },  // include_vat
+      { wch: 14 },  // effective_date
+      { wch: 25 }   // notes
+    ]
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Routes Template')
+    
+    // Add instructions sheet
+    const instructionsData = [
+      { Instructions: `Client Route Upload Template - ${client.company_name}` },
+      { Instructions: '' },
+      { Instructions: 'Column Descriptions:' },
+      { Instructions: '• route_code: Unique code for the route (required) - e.g., JHB-CPT' },
+      { Instructions: '• origin: Starting location (required)' },
+      { Instructions: '• destination: End location (required)' },
+      { Instructions: '• comments: Unique comment to distinguish similar routes (optional)' },
+      { Instructions: '• distance_km: Distance in kilometers (optional)' },
+      { Instructions: `• rate: The tariff rate in ${client.currency || 'ZAR'} (required)` },
+      { Instructions: '• rate_type: per_load, per_km, or per_ton (defaults to per_load)' },
+      { Instructions: `• additional_charges: Extra charges in ${client.currency || 'ZAR'} (optional)` },
+      { Instructions: '• include_vat: Yes or No - adds 15% VAT to total (defaults to No)' },
+      { Instructions: '• effective_date: Date in YYYY-MM-DD format (defaults to today)' },
+      { Instructions: '• notes: Additional notes about this tariff (optional)' },
+      { Instructions: '' },
+      { Instructions: 'Notes:' },
+      { Instructions: '• Delete the sample rows before uploading your data' },
+      { Instructions: '• Routes will be created if they don\'t exist' },
+      { Instructions: '• Existing routes will be matched by route_code' },
+      { Instructions: '• Use the comments field to differentiate routes with the same origin/destination' },
+      { Instructions: '• Do not modify the column headers' }
+    ]
+    const wsInstructions = XLSX.utils.json_to_sheet(instructionsData)
+    wsInstructions['!cols'] = [{ wch: 70 }]
+    XLSX.utils.book_append_sheet(wb, wsInstructions, 'Instructions')
+
+    XLSX.writeFile(wb, `${client.client_code}_routes_template.xlsx`)
+  }
+
+  // Handle file selection for bulk route upload
+  function handleRouteFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      try {
+        setBulkUploading(true)
+        setBulkUploadResult(null)
+        
+        const data = event.target?.result
+        const workbook = XLSX.read(data, { type: 'binary' })
+        const sheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[sheetName]
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[]
+
+        if (jsonData.length === 0) {
+          setBulkUploadResult({
+            success: 0,
+            failed: 0,
+            errors: ['The Excel file contains no data rows']
+          })
+          return
+        }
+
+        const result = await processBulkRouteUpload(jsonData)
+        setBulkUploadResult(result)
+        
+        if (result.success > 0) {
+          await loadClientData()
+        }
+      } catch (err) {
+        console.error('Error processing file:', err)
+        setBulkUploadResult({
+          success: 0,
+          failed: 0,
+          errors: ['Failed to process the Excel file. Please ensure it\'s a valid .xlsx file.']
+        })
+      } finally {
+        setBulkUploading(false)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      }
+    }
+    reader.readAsBinaryString(file)
+  }
+
+  // Process bulk route upload
+  async function processBulkRouteUpload(data: Record<string, unknown>[]): Promise<{ success: number; failed: number; errors: string[] }> {
+    const result = { success: 0, failed: 0, errors: [] as string[] }
+    if (!client) return result
+
+    const clientCurrency = client.currency || 'ZAR'
+    
+    // Helper to convert Excel serial date to YYYY-MM-DD string
+    const parseExcelDate = (value: unknown): string => {
+      if (!value) return new Date().toISOString().split('T')[0]
+      
+      const strValue = String(value).trim()
+      
+      // Check if it's already a valid date string (YYYY-MM-DD)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(strValue)) {
+        return strValue
+      }
+      
+      // Check if it's a number (Excel serial date)
+      const numValue = parseFloat(strValue)
+      if (!isNaN(numValue) && numValue > 10000 && numValue < 100000) {
+        // Excel serial date: days since 1900-01-01 (with Excel's leap year bug)
+        // Excel incorrectly treats 1900 as a leap year, so subtract 1 for dates after Feb 28, 1900
+        const excelEpoch = new Date(1899, 11, 30) // Dec 30, 1899
+        const date = new Date(excelEpoch.getTime() + numValue * 24 * 60 * 60 * 1000)
+        return date.toISOString().split('T')[0]
+      }
+      
+      // Try to parse as a date string
+      const parsed = new Date(strValue)
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString().split('T')[0]
+      }
+      
+      // Fall back to today
+      return new Date().toISOString().split('T')[0]
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i]
+      const rowNum = i + 2 // Excel row number (1-indexed + header)
+
+      try {
+        // Validate required fields
+        const routeCode = String(row.route_code || '').trim().toUpperCase()
+        const origin = String(row.origin || '').trim()
+        const destination = String(row.destination || '').trim()
+        const rate = parseFloat(String(row.rate || '0'))
+
+        if (!routeCode) {
+          result.errors.push(`Row ${rowNum}: Route code is required`)
+          result.failed++
+          continue
+        }
+
+        if (!origin) {
+          result.errors.push(`Row ${rowNum}: Origin is required`)
+          result.failed++
+          continue
+        }
+
+        if (!destination) {
+          result.errors.push(`Row ${rowNum}: Destination is required`)
+          result.failed++
+          continue
+        }
+
+        if (isNaN(rate) || rate <= 0) {
+          result.errors.push(`Row ${rowNum}: Valid rate is required`)
+          result.failed++
+          continue
+        }
+
+        // Parse optional fields
+        const comments = String(row.comments || '').trim() || null
+        const distanceKm = row.distance_km ? parseFloat(String(row.distance_km)) : null
+        const rateTypeStr = String(row.rate_type || 'per_load').trim().toLowerCase()
+        const rateType = ['per_load', 'per_km', 'per_ton'].includes(rateTypeStr) ? rateTypeStr : 'per_load'
+        const additionalCharges = row.additional_charges ? parseFloat(String(row.additional_charges)) : 0
+        const includeVatStr = String(row.include_vat || 'No').trim().toLowerCase()
+        const includeVat = includeVatStr === 'yes' || includeVatStr === 'true' || includeVatStr === '1'
+        const effectiveDate = parseExcelDate(row.effective_date)
+        const notes = String(row.notes || '').trim()
+
+        // Validate numeric fields
+        if (distanceKm !== null && isNaN(distanceKm)) {
+          result.errors.push(`Row ${rowNum}: Invalid distance value`)
+          result.failed++
+          continue
+        }
+
+        if (isNaN(additionalCharges)) {
+          result.errors.push(`Row ${rowNum}: Invalid additional charges value`)
+          result.failed++
+          continue
+        }
+
+        // Check if route exists, if not create it
+        let routeId: string
+        const { data: existingRoute } = await supabase
+          .from('routes')
+          .select('id')
+          .eq('route_code', routeCode)
+          .single()
+
+        if (existingRoute) {
+          routeId = existingRoute.id
+        } else {
+          // Create new route
+          const { data: newRoute, error: routeError } = await supabase
+            .from('routes')
+            .insert({
+              route_code: routeCode,
+              origin,
+              destination,
+              distance_km: distanceKm,
+              route_description: comments,
+              is_active: true
+            })
+            .select('id')
+            .single()
+
+          if (routeError || !newRoute) {
+            result.errors.push(`Row ${rowNum}: Failed to create route - ${routeError?.message || 'Unknown error'}`)
+            result.failed++
+            continue
+          }
+          routeId = newRoute.id
+        }
+
+        // Calculate total rate
+        const subtotal = rate + additionalCharges
+        const totalRate = includeVat ? subtotal * 1.15 : subtotal
+
+        // Store notes as JSON
+        const notesJson = JSON.stringify({
+          additional_charges: additionalCharges,
+          include_vat: includeVat,
+          notes: notes,
+        })
+
+        // Check if client route already exists (update) or not (insert)
+        const { data: existingClientRoute } = await supabase
+          .from('client_routes')
+          .select('id')
+          .eq('client_id', id)
+          .eq('route_id', routeId)
+          .single()
+
+        if (existingClientRoute) {
+          // Update existing client route
+          const { error: updateError } = await supabase
+            .from('client_routes')
+            .update({
+              base_rate: rate,
+              current_rate: totalRate,
+              rate_type: rateType,
+              currency: clientCurrency,
+              minimum_charge: additionalCharges,
+              effective_date: effectiveDate,
+              notes: notesJson,
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingClientRoute.id)
+
+          if (updateError) {
+            result.errors.push(`Row ${rowNum}: Failed to update - ${updateError.message}`)
+            result.failed++
+          } else {
+            result.success++
+          }
+        } else {
+          // Insert new client route
+          const { error: insertError } = await supabase
+            .from('client_routes')
+            .insert({
+              client_id: id,
+              route_id: routeId,
+              base_rate: rate,
+              current_rate: totalRate,
+              rate_type: rateType,
+              currency: clientCurrency,
+              minimum_charge: additionalCharges,
+              effective_date: effectiveDate,
+              notes: notesJson,
+              is_active: true,
+            })
+
+          if (insertError) {
+            result.errors.push(`Row ${rowNum}: Failed to add - ${insertError.message}`)
+            result.failed++
+          } else {
+            result.success++
+          }
+        }
+      } catch (err) {
+        result.errors.push(`Row ${rowNum}: Unexpected error`)
+        result.failed++
+      }
+    }
+
+    return result
+  }
+
   // Get routes not already assigned to this client
   const unassignedRoutes = availableRoutes.filter(
     r => !clientRoutes.some(cr => cr.route_id === r.id) || editingClientRoute?.route_id === r.id
@@ -708,6 +1065,13 @@ export default function ClientDetail() {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setShowBulkUploadModal(true)}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Bulk Upload
+              </button>
+              <button
                 onClick={() => setShowManageRoutes(true)}
                 className="btn-secondary flex items-center gap-2"
               >
@@ -729,6 +1093,7 @@ export default function ClientDetail() {
                 <tr className="border-b border-gray-200">
                   <th className="table-header" style={{ minWidth: '90px' }}>Route</th>
                   <th className="table-header" style={{ minWidth: '160px' }}>Origin → Destination</th>
+                  <th className="table-header" style={{ minWidth: '180px' }}>Comments</th>
                   <th className="table-header text-right" style={{ minWidth: '80px' }}>Distance</th>
                   <th className="table-header text-right" style={{ minWidth: '100px' }}>Rate</th>
                   <th className="table-header" style={{ minWidth: '90px' }}>Rate Type</th>
@@ -756,6 +1121,9 @@ export default function ClientDetail() {
                       </td>
                       <td className="table-cell">
                         {cr.route?.origin ?? '-'} → {cr.route?.destination ?? '-'}
+                      </td>
+                      <td className="table-cell text-gray-500 text-sm max-w-xs truncate">
+                        {cr.route?.route_description || '-'}
                       </td>
                       <td className="table-cell text-right">{cr.route?.distance_km ?? 0} km</td>
                       <td className="table-cell text-right font-semibold">{formatCurrency(cr.current_rate, client.currency || 'ZAR')}</td>
@@ -1010,7 +1378,9 @@ export default function ClientDetail() {
                   <option value="">Select a route</option>
                   {unassignedRoutes.map((route) => (
                     <option key={route.id} value={route.id}>
-                      {route.route_code} - {route.origin} → {route.destination} ({route.distance_km}km)
+                      {route.route_code} - {route.origin} → {route.destination}
+                      {route.route_description ? ` • ${route.route_description}` : ''}
+                      {route.distance_km ? ` (${route.distance_km}km)` : ''}
                     </option>
                   ))}
                 </select>
@@ -1243,6 +1613,11 @@ export default function ClientDetail() {
                             {route.origin} → {route.destination}
                           </span>
                         </div>
+                        {route.route_description && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {route.route_description}
+                          </p>
+                        )}
                         <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                           {route.distance_km && (
                             <span className="flex items-center gap-1">
@@ -1584,6 +1959,170 @@ export default function ClientDetail() {
                 disabled={saving}
               >
                 {saving ? 'Saving...' : 'Save Currency'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Route Upload Modal */}
+      {showBulkUploadModal && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-fade-in">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Bulk Upload Routes & Tariffs</h3>
+                <p className="text-sm text-gray-500 mt-1">Upload routes with comments and tariffs from Excel</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowBulkUploadModal(false)
+                  setBulkUploadResult(null)
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Download Template Section */}
+              <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-5 border border-primary-100">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/30">
+                    <Download className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">Step 1: Download Template</h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Download the Excel template with columns for routes, comments, and tariff details.
+                    </p>
+                    <button
+                      onClick={downloadRouteTemplate}
+                      className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-white text-primary-700 font-medium rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Template (.xlsx)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload Section */}
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/30">
+                    <Upload className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">Step 2: Upload Your File</h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Fill in your routes with tariffs and upload the completed Excel file.
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleRouteFileSelect}
+                      className="hidden"
+                      id="bulk-route-upload-input"
+                    />
+                    <label
+                      htmlFor="bulk-route-upload-input"
+                      className={`mt-3 inline-flex items-center gap-2 px-4 py-2 font-medium rounded-lg border transition-colors text-sm cursor-pointer ${
+                        bulkUploading 
+                          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                          : 'bg-white text-green-700 border-green-200 hover:bg-green-50'
+                      }`}
+                    >
+                      {bulkUploading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Select Excel File
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload Results */}
+              {bulkUploadResult && (
+                <div className={`rounded-xl p-5 border ${
+                  bulkUploadResult.failed === 0 && bulkUploadResult.success > 0
+                    ? 'bg-green-50 border-green-200'
+                    : bulkUploadResult.success === 0
+                    ? 'bg-red-50 border-red-200'
+                    : 'bg-amber-50 border-amber-200'
+                }`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    {bulkUploadResult.failed === 0 && bulkUploadResult.success > 0 ? (
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <Check className="w-5 h-5 text-white" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                        <AlertTriangle className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Upload Complete</h4>
+                      <p className="text-sm text-gray-600">
+                        <span className="text-green-600 font-medium">{bulkUploadResult.success} successful</span>
+                        {bulkUploadResult.failed > 0 && (
+                          <span className="text-red-600 font-medium"> • {bulkUploadResult.failed} failed</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {bulkUploadResult.errors.length > 0 && (
+                    <div className="mt-3 max-h-40 overflow-y-auto">
+                      <p className="text-xs font-medium text-gray-700 mb-2">Errors:</p>
+                      <ul className="space-y-1">
+                        {bulkUploadResult.errors.map((error, idx) => (
+                          <li key={idx} className="text-xs text-red-600 flex items-start gap-2">
+                            <span className="text-red-400 mt-0.5">•</span>
+                            {error}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Info box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <RouteIcon className="w-5 h-5 text-blue-500 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-800">How it works:</p>
+                    <ul className="mt-1 text-blue-700 space-y-1">
+                      <li>• New routes are created automatically if they don't exist</li>
+                      <li>• Existing routes are matched by route code</li>
+                      <li>• Use comments to distinguish similar routes</li>
+                      <li>• Existing client routes are updated with new tariffs</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
+              <button
+                onClick={() => {
+                  setShowBulkUploadModal(false)
+                  setBulkUploadResult(null)
+                }}
+                className="btn-secondary flex-1"
+              >
+                Close
               </button>
             </div>
           </div>
