@@ -1,6 +1,6 @@
+import { AlertTriangle, Calendar, Download, Eye, FileEdit, FileText, Palette, Upload, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, FileText, Upload, X, Eye, Download, Palette, FileEdit, Calendar } from 'lucide-react'
 import
   {
     downloadPdf,
@@ -37,6 +37,41 @@ const defaultBranding: OrganizationBranding = {
   accentColor: '#3b82f6',
 }
 
+// Business profiles - different companies with their own VAT/registration and addresses
+interface BusinessProfile {
+  id: string
+  name: string
+  country: string
+  vatNumber: string
+  registrationNumber: string
+  address: string
+  phone: string
+  email: string
+}
+
+const defaultBusinessProfiles: BusinessProfile[] = [
+  {
+    id: 'sa',
+    name: 'Matanuska (Pty) Ltd',
+    country: 'South Africa',
+    vatNumber: '4710136013',
+    registrationNumber: '2019/542290/07',
+    address: 'PO BOX 25148, Boksburg, 1462, South Africa',
+    phone: '+27 66 273 1270',
+    email: 'heinrich@matanuska.co.za',
+  },
+  {
+    id: 'zim',
+    name: 'Matanuska (Pvt) Ltd',
+    country: 'Zimbabwe',
+    vatNumber: '2000321177',
+    registrationNumber: '',
+    address: '1 Abercorn Street, Harare, Zimbabwe',
+    phone: '+27 66 273 1270',
+    email: 'heinrich@matanuska.co.za',
+  },
+]
+
 interface SavedRateSheet {
   id: string
   client_id: string
@@ -70,12 +105,17 @@ export default function RateSheets() {
   const [termsAndConditions, setTermsAndConditions] = useState(defaultTermsAndConditions)
   const [preparedBy, setPreparedBy] = useState('')
   const [reference, setReference] = useState('')
+  const [vatInclusive, setVatInclusive] = useState(false)
   
   // Branding state
   const [branding, setBranding] = useState<OrganizationBranding>(defaultBranding)
   const [showBrandingModal, setShowBrandingModal] = useState(false)
   const [tempBranding, setTempBranding] = useState<OrganizationBranding>(defaultBranding)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  
+  // Business profile state
+  const [businessProfiles] = useState<BusinessProfile[]>(defaultBusinessProfiles)
+  const [selectedProfileId, setSelectedProfileId] = useState<string>('sa')
   
   // Saved rate sheets (for future use)
   const [_savedRateSheets, _setSavedRateSheets] = useState<SavedRateSheet[]>([])
@@ -396,6 +436,12 @@ export default function RateSheets() {
     setError(null)
 
     try {
+      // Get selected business profile
+      const selectedProfile = businessProfiles.find(p => p.id === selectedProfileId) || businessProfiles[0]
+      
+      // Use USD for Zimbabwe company, otherwise use client's currency or ZAR
+      const currency = selectedProfile.id === 'zim' ? 'USD' : (selectedClient.currency || 'ZAR')
+
       const rateSheetData: RateSheetData = {
         client: selectedClient,
         routes: clientRoutes,
@@ -405,9 +451,20 @@ export default function RateSheets() {
         termsAndConditions: termsAndConditions || undefined,
         preparedBy: preparedBy || undefined,
         reference,
+        currency,
+        vatInclusive,
+      }
+      const brandingWithProfile: OrganizationBranding = {
+        ...branding,
+        companyName: selectedProfile.name,
+        vatNumber: selectedProfile.vatNumber,
+        registrationNumber: selectedProfile.registrationNumber,
+        address: selectedProfile.address,
+        phone: selectedProfile.phone,
+        email: selectedProfile.email,
       }
 
-      const pdf = generateClientRateSheet(rateSheetData, branding)
+      const pdf = generateClientRateSheet(rateSheetData, brandingWithProfile)
       const filename = `RateSheet_${selectedClient.client_code}_${effectiveDate}.pdf`
 
       if (preview) {
@@ -541,6 +598,56 @@ export default function RateSheets() {
               )}
             </div>
 
+            {/* Business Profile Selection */}
+            <div className="card">
+              <h3 className="card-header flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                </svg>
+                Business Entity
+              </h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Select which company entity to use on the rate sheet.
+              </p>
+              <div className="space-y-3">
+                {businessProfiles.map((profile) => (
+                  <label
+                    key={profile.id}
+                    className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                      selectedProfileId === profile.id
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="businessProfile"
+                      value={profile.id}
+                      checked={selectedProfileId === profile.id}
+                      onChange={(e) => setSelectedProfileId(e.target.value)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-gray-900">{profile.name}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          profile.country === 'South Africa' 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {profile.country === 'South Africa' ? '🇿🇦 SA' : '🇿🇼 ZIM'}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-500 space-y-0.5">
+                        <p>VAT: {profile.vatNumber}{profile.registrationNumber ? ` | Reg: ${profile.registrationNumber}` : ''}</p>
+                        <p className="text-xs text-gray-400">{profile.address}</p>
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             {/* Date & Reference */}
             <div className="card">
               <h3 className="card-header flex items-center gap-2">
@@ -603,12 +710,35 @@ export default function RateSheets() {
                   placeholder="Your name"
                 />
               </div>
+              <div className="mt-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={vatInclusive}
+                    onChange={(e) => setVatInclusive(e.target.checked)}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    VAT Inclusive
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    (Shows "VAT Incl" on rate column if checked)
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* Routes Preview */}
             {selectedClient && clientRoutes.length > 0 && (
               <div className="card overflow-hidden">
-                <h3 className="card-header">Routes & Rates</h3>
+                <h3 className="card-header flex items-center justify-between">
+                  <span>Routes & Rates</span>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    selectedProfileId === 'zim' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {selectedProfileId === 'zim' ? '$ USD' : 'R ZAR'}
+                  </span>
+                </h3>
                 <div className="table-container">
                   <table className="w-full" style={{ minWidth: '500px' }}>
                     <thead>
@@ -631,7 +761,7 @@ export default function RateSheets() {
                             {cr.route?.origin ?? '-'} → {cr.route?.destination ?? '-'}
                           </td>
                           <td className="table-cell text-right font-semibold">
-                            {formatCurrency(cr.current_rate)}
+                            {formatCurrency(cr.current_rate, selectedProfileId === 'zim' ? 'USD' : (selectedClient?.currency as 'ZAR' | 'USD' || 'ZAR'))}
                           </td>
                           <td className="table-cell">
                             <span className="badge badge-info">

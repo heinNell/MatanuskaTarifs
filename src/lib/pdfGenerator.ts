@@ -26,6 +26,8 @@ export interface RateSheetData {
   termsAndConditions?: string
   preparedBy?: string
   reference?: string
+  currency?: 'ZAR' | 'USD'
+  vatInclusive?: boolean
 }
 
 const defaultBranding: OrganizationBranding = {
@@ -245,18 +247,24 @@ export function generateClientRateSheet(
     return text.length > maxLength ? text.substring(0, maxLength - 2) + '...' : text
   }
   
+  // Get currency from data or client
+  const currency = data.currency || data.client.currency || 'ZAR'
+  
+  // Determine rate header text based on VAT inclusion
+  const rateHeader = data.vatInclusive ? 'Rate (VAT Incl)' : 'Rate'
+  
   const tableData = data.routes.map((cr) => [
     cr.route?.route_code || '-',
     truncateText(cr.route?.origin || '', 18),
     truncateText(cr.route?.destination || '', 18),
-    truncateText(cr.route?.route_description || '', 28),
+    truncateText(cr.route_description || cr.route?.route_description || '', 28),
     `${cr.route?.distance_km || 0}`,
-    formatCurrency(cr.current_rate),
+    formatCurrency(cr.current_rate, currency),
   ])
 
   autoTable(doc, {
     startY: yPos,
-    head: [['Route', 'Origin', 'Destination', 'Comments', 'Km', 'Rate']],
+    head: [[' Route', 'Origin', 'Destination', 'Comments', 'Km', rateHeader]],
     body: tableData,
     theme: 'striped',
     headStyles: {
@@ -408,7 +416,14 @@ function formatDate(dateStr: string): string {
   })
 }
 
-function formatCurrency(amount: number): string {
+function formatCurrency(amount: number, currency: 'ZAR' | 'USD' = 'ZAR'): string {
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(amount)
+  }
   return new Intl.NumberFormat('en-ZA', {
     style: 'currency',
     currency: 'ZAR',

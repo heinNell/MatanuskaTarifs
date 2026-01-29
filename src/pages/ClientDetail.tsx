@@ -769,16 +769,18 @@ export default function ClientDetail() {
           notes: notes,
         })
 
-        // Check if client route already exists (update) or not (insert)
+        // Check if client route already exists with the same route AND same comments
+        // This allows multiple entries for the same route with different comments
         const { data: existingClientRoute } = await supabase
           .from('client_routes')
           .select('id')
           .eq('client_id', id)
           .eq('route_id', routeId)
+          .eq('route_description', comments || '')
           .single()
 
         if (existingClientRoute) {
-          // Update existing client route
+          // Update existing client route with matching comments
           const { error: updateError } = await supabase
             .from('client_routes')
             .update({
@@ -789,6 +791,7 @@ export default function ClientDetail() {
               minimum_charge: additionalCharges,
               effective_date: effectiveDate,
               notes: notesJson,
+              route_description: comments,
               is_active: true,
               updated_at: new Date().toISOString(),
             })
@@ -801,7 +804,7 @@ export default function ClientDetail() {
             result.success++
           }
         } else {
-          // Insert new client route
+          // Insert new client route (even if same route_id, if comments differ)
           const { error: insertError } = await supabase
             .from('client_routes')
             .insert({
@@ -814,6 +817,7 @@ export default function ClientDetail() {
               minimum_charge: additionalCharges,
               effective_date: effectiveDate,
               notes: notesJson,
+              route_description: comments,
               is_active: true,
             })
 
@@ -1123,7 +1127,7 @@ export default function ClientDetail() {
                         {cr.route?.origin ?? '-'} → {cr.route?.destination ?? '-'}
                       </td>
                       <td className="table-cell text-gray-500 text-sm max-w-xs truncate">
-                        {cr.route?.route_description || '-'}
+                        {cr.route_description || cr.route?.route_description || '-'}
                       </td>
                       <td className="table-cell text-right">{cr.route?.distance_km ?? 0} km</td>
                       <td className="table-cell text-right font-semibold">{formatCurrency(cr.current_rate, client.currency || 'ZAR')}</td>

@@ -61,6 +61,7 @@ export interface ClientRoute {
   effective_date: string
   is_active: boolean
   notes: string | null
+  route_description: string | null
   created_at: string
   updated_at: string
   // Joined fields
