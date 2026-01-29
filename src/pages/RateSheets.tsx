@@ -465,7 +465,11 @@ export default function RateSheets() {
       }
 
       const pdf = generateClientRateSheet(rateSheetData, brandingWithProfile)
-      const filename = `RateSheet_${selectedClient.client_code}_${effectiveDate}.pdf`
+      
+      // Generate filename with client name and current date
+      const sanitizedClientName = selectedClient.company_name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
+      const generatedDate = new Date().toISOString().split('T')[0]
+      const filename = `${sanitizedClientName}_${generatedDate}.pdf`
 
       if (preview) {
         openPdfInNewTab(pdf)

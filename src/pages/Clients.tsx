@@ -1,8 +1,7 @@
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { formatCurrency } from '../lib/utils'
 import type { Client, ClientFormData } from '../types'
 
 const initialFormData: ClientFormData = {
@@ -332,7 +331,6 @@ export default function Clients() {
                 <th className="table-header" style={{ minWidth: '220px' }}>Client</th>
                 <th className="table-header" style={{ minWidth: '180px' }}>Contact</th>
                 <th className="table-header" style={{ minWidth: '120px' }}>Location</th>
-                <th className="table-header text-right" style={{ minWidth: '120px' }}>Credit Limit</th>
                 <th className="table-header text-center" style={{ minWidth: '100px' }}>Terms</th>
                 <th className="table-header text-center" style={{ minWidth: '90px' }}>Status</th>
                 <th className="table-header text-right" style={{ minWidth: '100px' }}>Actions</th>
@@ -388,9 +386,6 @@ export default function Clients() {
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
-                  </td>
-                  <td className="table-cell text-right">
-                    <span className="font-semibold text-gray-900">{formatCurrency(client.credit_limit)}</span>
                   </td>
                   <td className="table-cell text-center">
                     <span className="text-sm text-gray-700">{client.payment_terms} days</span>
