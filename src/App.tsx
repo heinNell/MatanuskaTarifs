@@ -10,6 +10,7 @@ import RateSheets from './pages/RateSheets'
 import RoutesPage from './pages/Routes'
 import Settings from './pages/Settings'
 import TariffHistory from './pages/TariffHistory'
+import CompetitorPricing from './pages/CompetitorPricing'
 
 function App() {
   const { session, loading } = useSupabase()
@@ -41,6 +42,7 @@ function App() {
                   <Route path="/clients/:id" element={<ClientDetail />} />
                   <Route path="/routes" element={<RoutesPage />} />
                   <Route path="/rate-sheets" element={<RateSheets />} />
+                  <Route path="/competitor-pricing" element={<CompetitorPricing />} />
                   <Route path="/tariff-history" element={<TariffHistory />} />
                   <Route path="/settings" element={<Settings />} />
                 </Routes>

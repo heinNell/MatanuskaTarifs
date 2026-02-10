@@ -78,6 +78,7 @@ const navigation = [
   { name: 'Master Control', href: '/master-control', icon: icons.masterControl },
   { name: 'Clients', href: '/clients', icon: icons.clients },
   { name: 'Routes', href: '/routes', icon: icons.routes },
+  { name: 'Competitor Pricing', href: '/competitor-pricing', icon: icons.routes },
   { name: 'Rate Sheets', href: '/rate-sheets', icon: icons.rateSheets },
   { name: 'Tariff History', href: '/tariff-history', icon: icons.history },
   { name: 'Settings', href: '/settings', icon: icons.settings },
